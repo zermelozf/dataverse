@@ -1,0 +1,109 @@
+<div class="kpi-card">
+  <div class="card-header">
+    @if (isEditingField('name')) {
+      <input 
+        type="text" 
+        class="inline-input title-input"
+        [value]="editingFieldValue()"
+        (input)="editingFieldValue.set($any($event.target).value)"
+        (blur)="saveField('name')"
+        (keydown.enter)="saveField('name'); $event.target.blur()"
+        (keydown.escape)="cancelEditingField()"
+        placeholder="KPI name"
+        autofocus
+      />
+    } @else {
+      <h3 (click)="startEditingField('name')" class="editable-title">{{ kpi().name }}</h3>
+    }
+    <div class="card-actions">
+      <button class="btn-icon" (click)="deleteKPI()" title="Delete">🗑️</button>
+    </div>
+  </div>
+  
+  <div class="kpi-fields">
+    <div class="field-row">
+      <span class="field-label">Unit</span>
+      @if (isEditingField('unit')) {
+        <input 
+          type="text" 
+          class="inline-input"
+          [value]="editingFieldValue()"
+          (input)="editingFieldValue.set($any($event.target).value)"
+          (blur)="saveField('unit')"
+          (keydown.enter)="saveField('unit'); $event.target.blur()"
+          (keydown.escape)="cancelEditingField()"
+          placeholder="e.g., %, $, count, days"
+          autofocus
+        />
+      } @else {
+        <span 
+          (click)="startEditingField('unit')" 
+          class="field-value editable-text"
+          [class.placeholder]="!kpi().unit"
+        >
+          {{ kpi().unit || 'Click to add unit' }}
+        </span>
+      }
+    </div>
+    
+    <div class="field-row">
+      <span class="field-label">Target</span>
+      @if (isEditingField('targetValue')) {
+        <input 
+          type="text" 
+          class="inline-input"
+          [value]="editingFieldValue()"
+          (input)="editingFieldValue.set($any($event.target).value)"
+          (blur)="saveField('targetValue')"
+          (keydown.enter)="saveField('targetValue'); $event.target.blur()"
+          (keydown.escape)="cancelEditingField()"
+          placeholder="Target value"
+          autofocus
+        />
+      } @else {
+        <span 
+          (click)="startEditingField('targetValue')" 
+          class="field-value editable-text"
+          [class.placeholder]="!kpi().targetValue"
+        >
+          {{ kpi().targetValue || 'Click to add target' }}
+        </span>
+      }
+    </div>
+  </div>
+  
+  <div class="description-section">
+    @if (isEditingField('description')) {
+      <textarea 
+        class="inline-textarea"
+        [value]="editingFieldValue()"
+        (input)="editingFieldValue.set($any($event.target).value)"
+        (blur)="saveField('description')"
+        (keydown.escape)="cancelEditingField()"
+        placeholder="Description"
+        rows="2"
+        autofocus
+      ></textarea>
+    } @else {
+      <p 
+        class="description" 
+        (click)="startEditingField('description')"
+        [class.placeholder]="!kpi().description"
+      >
+        {{ kpi().description || 'Click to add description' }}
+      </p>
+    }
+  </div>
+  
+  @if (kpiPersonas().length > 0) {
+    <div class="personas-section">
+      <span class="section-label">Personas ({{ kpiPersonas().length }})</span>
+      <div class="personas-list">
+        @for (persona of kpiPersonas(); track persona.id) {
+          <span class="persona-chip">{{ persona.name }}</span>
+        }
+      </div>
+    </div>
+  }
+</div>
+

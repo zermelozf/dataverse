@@ -1,0 +1,78 @@
+<div class="domains-container">
+  <div class="header">
+    <h2>Domains</h2>
+    <div class="header-controls">
+      <app-search-input
+        placeholder="Search domains..."
+        [value]="searchQuery()"
+        (valueChange)="searchQuery.set($event)"
+      />
+      <button class="btn btn-primary" (click)="openAddModal()">+ Add Domain</button>
+    </div>
+  </div>
+
+  <div class="domains-grid">
+    @for (domain of domains(); track domain.id) {
+      <app-domain-card [domain]="domain" />
+    } @empty {
+      <div class="empty-state-large">
+        <p>No domains yet. Create your first one!</p>
+      </div>
+    }
+  </div>
+</div>
+
+<!-- Add Domain Modal -->
+@if (showAddModal()) {
+  <div class="modal-overlay" (click)="closeAddModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Add Domain</h3>
+        <button class="btn-close" (click)="closeAddModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Name</label>
+          <input 
+            type="text" 
+            [(ngModel)]="newDomain().name" 
+            placeholder="Enter domain name"
+            [class.error]="addModalErrors().name"
+          />
+          @if (addModalErrors().name) {
+            <span class="error-message">{{ addModalErrors().name }}</span>
+          }
+        </div>
+        <div class="form-group">
+          <label>Domain Owner</label>
+          <input 
+            type="text" 
+            [(ngModel)]="newDomain().domainOwner" 
+            placeholder="Enter domain owner"
+          />
+        </div>
+        <div class="form-group">
+          <label>Domain Steward</label>
+          <input 
+            type="text" 
+            [(ngModel)]="newDomain().domainSteward" 
+            placeholder="Enter domain steward"
+          />
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <textarea 
+            [(ngModel)]="newDomain().description" 
+            placeholder="Enter description (optional)" 
+            rows="3"
+          ></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeAddModal()">Cancel</button>
+        <button class="btn btn-primary" (click)="addDomain()">Add</button>
+      </div>
+    </div>
+  </div>
+}
+

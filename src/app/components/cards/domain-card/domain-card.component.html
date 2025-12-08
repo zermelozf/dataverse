@@ -1,0 +1,109 @@
+<div class="domain-card">
+  <div class="card-header">
+    @if (isEditingField('name')) {
+      <input 
+        type="text" 
+        class="inline-input title-input"
+        [value]="editingFieldValue()"
+        (input)="editingFieldValue.set($any($event.target).value)"
+        (blur)="saveField('name')"
+        (keydown.enter)="saveField('name'); $event.target.blur()"
+        (keydown.escape)="cancelEditingField()"
+        placeholder="Domain name"
+        autofocus
+      />
+    } @else {
+      <h3 (click)="startEditingField('name')" class="editable-title">{{ domain().name }}</h3>
+    }
+    <div class="card-actions">
+      <button class="btn-icon" (click)="deleteDomain()" title="Delete">🗑️</button>
+    </div>
+  </div>
+  
+  <div class="domain-fields">
+    <div class="field-row">
+      <span class="field-label">Owner</span>
+      @if (isEditingField('domainOwner')) {
+        <input 
+          type="text" 
+          class="inline-input"
+          [value]="editingFieldValue()"
+          (input)="editingFieldValue.set($any($event.target).value)"
+          (blur)="saveField('domainOwner')"
+          (keydown.enter)="saveField('domainOwner'); $event.target.blur()"
+          (keydown.escape)="cancelEditingField()"
+          placeholder="Domain owner"
+          autofocus
+        />
+      } @else {
+        <span 
+          (click)="startEditingField('domainOwner')" 
+          class="field-value editable-text"
+          [class.placeholder]="!domain().domainOwner"
+        >
+          {{ domain().domainOwner || 'Click to add owner' }}
+        </span>
+      }
+    </div>
+    
+    <div class="field-row">
+      <span class="field-label">Steward</span>
+      @if (isEditingField('domainSteward')) {
+        <input 
+          type="text" 
+          class="inline-input"
+          [value]="editingFieldValue()"
+          (input)="editingFieldValue.set($any($event.target).value)"
+          (blur)="saveField('domainSteward')"
+          (keydown.enter)="saveField('domainSteward'); $event.target.blur()"
+          (keydown.escape)="cancelEditingField()"
+          placeholder="Domain steward"
+          autofocus
+        />
+      } @else {
+        <span 
+          (click)="startEditingField('domainSteward')" 
+          class="field-value editable-text"
+          [class.placeholder]="!domain().domainSteward"
+        >
+          {{ domain().domainSteward || 'Click to add steward' }}
+        </span>
+      }
+    </div>
+  </div>
+  
+  <div class="description-section">
+    @if (isEditingField('description')) {
+      <textarea 
+        class="inline-textarea"
+        [value]="editingFieldValue()"
+        (input)="editingFieldValue.set($any($event.target).value)"
+        (blur)="saveField('description')"
+        (keydown.escape)="cancelEditingField()"
+        placeholder="Description"
+        rows="2"
+        autofocus
+      ></textarea>
+    } @else {
+      <p 
+        class="description" 
+        (click)="startEditingField('description')"
+        [class.placeholder]="!domain().description"
+      >
+        {{ domain().description || 'Click to add description' }}
+      </p>
+    }
+  </div>
+  
+  @if (domainDataModels().length > 0) {
+    <div class="data-models-section">
+      <span class="section-label">Data Models ({{ domainDataModels().length }})</span>
+      <div class="data-models-list">
+        @for (model of domainDataModels(); track model.id) {
+          <span class="data-model-chip">{{ model.name }}</span>
+        }
+      </div>
+    </div>
+  }
+</div>
+
