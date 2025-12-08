@@ -1,0 +1,93 @@
+<div class="flow-container" (click)="closeContextMenu(); onCanvasClick($event)" (contextmenu)="onContainerRightClick($event)">
+  <vflow 
+    [nodes]="nodes()" 
+    [edges]="edges()"
+    [connection]="connectionSettings"
+    view="auto"
+    [minZoom]="0.1"
+    [maxZoom]="2"
+    [entitiesSelectable]="true"
+    [elevateNodesOnSelect]="true"
+    [elevateEdgesOnSelect]="true"
+    background="#f8fafc"
+    (connect)="onConnect($event)"
+    (onEdgesChange.select)="onEdgeSelect($event)"
+  >
+    <!-- Custom node template -->
+    <ng-template nodeHtml let-ctx>
+      @if (ctx.node.data.type === 'addButton') {
+        <!-- Add button node -->
+        <div 
+          class="add-button-node"
+          [style.border-color]="getNodeBorderColor(ctx.node.data.entityType)"
+          (click)="onAddButtonClick(ctx.node.data.entityType)"
+        >
+          <span class="add-icon" [style.color]="getNodeBorderColor(ctx.node.data.entityType)">+</span>
+        </div>
+      } @else {
+        <!-- Regular entity node -->
+        <div 
+          class="flow-node"
+          [class.matched]="nodeMatchesSearch(ctx.node.data)"
+          [class.highlighted]="isNodeHighlighted(ctx.node.id)"
+          [class.dimmed]="hasActiveHighlight() && !isNodeHighlighted(ctx.node.id)"
+          [style.background-color]="getNodeBgColor(ctx.node.data.type)"
+          [style.border-color]="getNodeBorderColor(ctx.node.data.type)"
+          (click)="onNodeClick(ctx.node.id, ctx.node.data)"
+          (dblclick)="onNodeDoubleClick(ctx.node.id, ctx.node.data)"
+          (contextmenu)="onNodeRightClick($event, ctx.node.id, ctx.node.data)"
+        >
+          <div class="node-content">
+            <span class="node-type-badge" [style.background-color]="getNodeBorderColor(ctx.node.data.type)">
+              {{ getTypeBadgeLabel(ctx.node.data.type) }}
+            </span>
+            <span class="node-label">{{ getNodeLabel(ctx.node.data) }}</span>
+          </div>
+          
+          <!-- Target handle (left side) -->
+          @if (ctx.node.data.type !== 'persona') {
+            <handle [type]="'target'" [position]="'left'" [id]="'target'" />
+          }
+          
+          <!-- Source handle (right side) -->
+          @if (ctx.node.data.type !== 'dataModel') {
+            <handle [type]="'source'" [position]="'right'" [id]="'source'" />
+          }
+        </div>
+      }
+    </ng-template>
+    
+  </vflow>
+
+  <!-- Context Menu -->
+  @if (contextMenuVisible()) {
+    <div 
+      class="context-menu" 
+      [style.left.px]="contextMenuPosition().x" 
+      [style.top.px]="contextMenuPosition().y"
+      (click)="$event.stopPropagation()"
+    >
+      @if (contextMenuMode() === 'node') {
+        <button class="context-menu-item" (click)="onContextMenuView()">
+          <span class="menu-icon">👁️</span>
+          <span>View Details</span>
+        </button>
+        <button class="context-menu-item danger" (click)="onContextMenuDelete()">
+          <span class="menu-icon">🗑️</span>
+          <span>Delete</span>
+        </button>
+      } @else {
+        <button class="context-menu-item danger" (click)="onContextMenuDeleteEdge()">
+          <span class="menu-icon">🗑️</span>
+          <span>Delete Connection</span>
+        </button>
+      }
+    </div>
+  }
+  
+  <!-- Help text -->
+  <div class="flow-help">
+    <p>Click node to highlight • Right-click for options • Drag handles to connect</p>
+  </div>
+</div>
+

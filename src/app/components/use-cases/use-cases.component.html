@@ -1,0 +1,206 @@
+<div class="use-cases-container">
+  <div class="header">
+    <h2>Use Cases</h2>
+    <div class="header-controls">
+      <app-search-input
+        placeholder="Search use cases..."
+        [value]="searchQuery()"
+        (valueChange)="searchQuery.set($event)"
+      />
+      <button class="btn btn-primary" (click)="openAddModal()">+ Add Use Case</button>
+    </div>
+  </div>
+
+  <div class="use-cases-grid">
+    @for (useCase of useCases(); track useCase.id) {
+      <app-use-case-card [useCase]="useCase" />
+    } @empty {
+      <div class="empty-state-large">
+        <p>No use cases yet. Create your first one!</p>
+      </div>
+    }
+  </div>
+</div>
+
+<!-- Add Use Case Modal -->
+@if (showAddModal()) {
+  <div class="modal-overlay" (click)="closeAddModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Add Use Case</h3>
+        <button class="btn-close" (click)="closeAddModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Name</label>
+          <input 
+            type="text" 
+            [(ngModel)]="newUseCase().name" 
+            placeholder="Enter use case name"
+            [class.error]="addModalErrors().name"
+          />
+          @if (addModalErrors().name) {
+            <span class="error-message">{{ addModalErrors().name }}</span>
+          }
+        </div>
+        <div class="form-group">
+          <label>As <span class="story-hint">(Persona)</span></label>
+          @if (addModalErrors().persona) {
+            <span class="error-message">{{ addModalErrors().persona }}</span>
+          }
+          @if (editingPersonaInModal()) {
+            <div class="persona-selector">
+              <input 
+                type="text" 
+                class="persona-search-input"
+                [ngModel]="personaSearchFilterModal()"
+                (ngModelChange)="personaSearchFilterModal.set($event)"
+                (blur)="handlePersonaModalBlur()"
+                placeholder="Search or create persona..."
+                autofocus
+              />
+              <div class="persona-dropdown" (mousedown)="$event.preventDefault()">
+                @if (personaSearchFilterModal().trim()) {
+                  @for (persona of getFilteredPersonasForModal(); track persona.id) {
+                    <div 
+                      class="persona-option"
+                      (mousedown)="assignPersonaInModal(persona.id)"
+                    >
+                      {{ persona.name }}
+                    </div>
+                  }
+                  @if (canCreatePersonaInModal()) {
+                    <div 
+                      class="persona-option create-option"
+                      (mousedown)="createAndAssignPersonaInModal()"
+                    >
+                      + Create "{{ personaSearchFilterModal() }}"
+                    </div>
+                  }
+                  @if (getFilteredPersonasForModal().length === 0 && !canCreatePersonaInModal()) {
+                    <div class="persona-option no-results">No matching personas</div>
+                  }
+                } @else {
+                  @for (persona of personas(); track persona.id) {
+                    <div 
+                      class="persona-option"
+                      (mousedown)="assignPersonaInModal(persona.id)"
+                    >
+                      {{ persona.name }}
+                    </div>
+                  }
+                }
+              </div>
+            </div>
+          } @else {
+            <div 
+              class="persona-display" 
+              [class.error]="addModalErrors().persona"
+              (click)="editingPersonaInModal.set(true)"
+            >
+              @if (newUseCase().persona) {
+                <span class="persona-text">{{ getPersonaName(newUseCase().persona) }}</span>
+              } @else {
+                <span class="placeholder-text">Click to select or create persona</span>
+              }
+            </div>
+          }
+        </div>
+        <div class="form-group">
+          <label>I want to <span class="story-hint">(Action)</span></label>
+          <input 
+            type="text" 
+            [(ngModel)]="newUseCase().action" 
+            placeholder="Enter the action"
+            [class.error]="addModalErrors().action"
+          />
+          @if (addModalErrors().action) {
+            <span class="error-message">{{ addModalErrors().action }}</span>
+          }
+        </div>
+        <div class="form-group">
+          <label>So that I can<span class="story-hint">(Goal)</span></label>
+          <input 
+            type="text" 
+            [(ngModel)]="newUseCase().goal" 
+            placeholder="Enter the goal/benefit"
+            [class.error]="addModalErrors().goal"
+          />
+          @if (addModalErrors().goal) {
+            <span class="error-message">{{ addModalErrors().goal }}</span>
+          }
+        </div>
+        <div class="form-group">
+          <label>Tools that can realize this use case</label>
+          <div class="tools-list">
+            @for (mapping of (newUseCase().useCaseToolMappings || []); track mapping.toolId) {
+              <div class="tool-item">
+                <span class="tool-name">{{ getToolName(mapping.toolId) }}</span>
+                <div class="tool-actions" (click)="$event.stopPropagation()">
+                  <button class="btn-icon" (click)="removeToolFromModal(mapping.toolId)" title="Remove">🗑️</button>
+                </div>
+              </div>
+            }
+            
+            @if (addingToolInModal()) {
+              <div class="tool-item">
+                <div class="tool-selector-container">
+                  <input 
+                    type="text" 
+                    class="tool-search-input"
+                    [ngModel]="toolSearchFilterModal()"
+                    (ngModelChange)="toolSearchFilterModal.set($event)"
+                    (blur)="handleToolModalInputBlur()"
+                    placeholder="Search or create tool..."
+                    autofocus
+                  />
+                  <div class="tool-dropdown" (mousedown)="$event.preventDefault()">
+                    @if (toolSearchFilterModal().trim()) {
+                      @for (tool of getFilteredToolsForModal(); track tool.id) {
+                        <div 
+                          class="tool-option"
+                          (mousedown)="addToolToUseCaseInModal(tool.id)"
+                        >
+                          {{ tool.name }}
+                        </div>
+                      }
+                      @if (canCreateToolInModal()) {
+                        <div 
+                          class="tool-option create-option"
+                          (mousedown)="createAndAddToolInModal()"
+                        >
+                          + Create "{{ toolSearchFilterModal() }}"
+                        </div>
+                      }
+                      @if (getFilteredToolsForModal().length === 0 && !canCreateToolInModal()) {
+                        <div class="tool-option no-results">No matching tools</div>
+                      }
+                    } @else {
+                      @for (tool of tools(); track tool.id) {
+                        <div 
+                          class="tool-option"
+                          (mousedown)="addToolToUseCaseInModal(tool.id)"
+                        >
+                          {{ tool.name }}
+                        </div>
+                      }
+                    }
+                  </div>
+                </div>
+              </div>
+            } @else {
+              <div class="add-tool-item" (click)="startAddingToolInModal()">
+                <span class="add-icon">+</span>
+                <span class="add-text">Add tool</span>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeAddModal()">Cancel</button>
+        <button class="btn btn-primary" (click)="addUseCase()">Add</button>
+      </div>
+    </div>
+  </div>
+}

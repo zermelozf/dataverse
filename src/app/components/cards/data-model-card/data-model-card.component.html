@@ -1,0 +1,241 @@
+<div class="model-card">
+  <div class="card-header">
+    @if (isEditingField('name')) {
+      <input 
+        type="text" 
+        class="inline-input title-input"
+        [value]="editingFieldValue()"
+        (input)="editingFieldValue.set($any($event.target).value)"
+        (blur)="saveField('name')"
+        (keydown.enter)="saveField('name'); $event.target.blur()"
+        (keydown.escape)="cancelEditingField()"
+        placeholder="Model name"
+        autofocus
+      />
+    } @else {
+      <h3 (click)="startEditingField('name')" class="editable-title">{{ dataModel().name }}</h3>
+    }
+    <div class="card-actions">
+      <button class="btn-icon" (click)="deleteDataModel()" title="Delete">🗑️</button>
+    </div>
+  </div>
+  
+  @if (isEditingField('description')) {
+    <textarea 
+      class="inline-textarea"
+      [value]="editingFieldValue()"
+      (input)="editingFieldValue.set($any($event.target).value)"
+      (blur)="saveField('description')"
+      (keydown.escape)="cancelEditingField()"
+      placeholder="Description"
+      rows="2"
+      autofocus
+    ></textarea>
+  } @else {
+    <p class="description" (click)="startEditingField('description')">{{ dataModel().description || 'Click to add description' }}</p>
+  }
+  
+  <div class="attributes-section">
+    <div class="section-header">
+      <h4>Data Elements</h4>
+    </div>
+
+    <div class="attributes-list">
+      @for (attr of (dataModel().attributes || []); track attr.id) {
+        <div class="attribute-item">
+          <div class="attr-content">
+            <div class="attr-main-line">
+              @if (isEditingAttributeField(attr.id, 'name')) {
+                <input 
+                  type="text" 
+                  class="inline-input attr-name-input"
+                  [value]="editingAttributeFieldValue()"
+                  (input)="editingAttributeFieldValue.set($any($event.target).value)"
+                  (blur)="saveAttributeField(attr.id, 'name')"
+                  (keydown.enter)="saveAttributeField(attr.id, 'name'); $event.target.blur()"
+                  (keydown.escape)="cancelEditingAttributeField()"
+                  placeholder="Data element name"
+                  autofocus
+                />
+              } @else {
+                <strong (click)="startEditingAttributeField(attr, 'name')" class="editable-text">{{ attr.name }}</strong>
+              }
+              
+              @if (isEditingAttributeType(attr.id)) {
+                <select 
+                  class="type-badge editable-badge"
+                  [ngModel]="attr.type"
+                  (ngModelChange)="updateAttributeType(attr.id, $event)"
+                  (blur)="cancelEditingAttributeType()"
+                  autofocus
+                >
+                  @for (type of attributeTypes; track type) {
+                    <option [value]="type">{{ type }}</option>
+                  }
+                </select>
+              } @else {
+                <span (click)="startEditingAttributeType(attr)" class="type-badge editable-badge">{{ attr.type }}</span>
+              }
+              
+              @if (isRelationshipType(attr.type)) {
+                @if (isEditingAttributeRelationship(attr.id)) {
+                  <div class="relationship-fields">
+                    <div class="search-container">
+                      <input 
+                        type="text" 
+                        [ngModel]="dataModelSearchFilter()"
+                        (ngModelChange)="dataModelSearchFilter.set($event)"
+                        placeholder="Search data models..." 
+                        class="search-input"
+                      />
+                      @if (dataModelSearchFilter().trim()) {
+                        <button type="button" class="btn-clear-search" (click)="clearDataModelSearch()" title="Clear">×</button>
+                      }
+                    </div>
+                    <select 
+                      class="inline-select"
+                      [ngModel]="attr.targetDataModelId || ''"
+                      (ngModelChange)="updateAttributeRelationship(attr.id, $event)"
+                      (blur)="saveAttributeRelationship(attr.id)"
+                    >
+                      <option value="">Select target model</option>
+                      @for (targetModel of getAvailableDataModels(); track targetModel.id) {
+                        <option [value]="targetModel.id">{{ targetModel.name }}</option>
+                      }
+                    </select>
+                    <select 
+                      class="rel-type-badge editable-badge"
+                      [ngModel]="attr.relationshipType || 'one-to-many'"
+                      (ngModelChange)="updateAttributeRelationship(attr.id, undefined, $event)"
+                      (blur)="saveAttributeRelationship(attr.id)"
+                    >
+                      @for (type of relationshipTypes; track type) {
+                        <option [value]="type">{{ type }}</option>
+                      }
+                    </select>
+                  </div>
+                } @else {
+                  <div class="relationship-badges">
+                    @if (attr.targetDataModelId) {
+                      <span class="target-model editable-badge" (click)="startEditingAttributeRelationship(attr)">→ {{ getDataModelName(attr.targetDataModelId) }}</span>
+                    } @else {
+                      <span class="target-model editable-badge placeholder" (click)="startEditingAttributeRelationship(attr)">→ Select target</span>
+                    }
+                    <span (click)="startEditingAttributeRelationship(attr)" class="rel-type-badge editable-badge">{{ attr.relationshipType || 'one-to-many' }}</span>
+                  </div>
+                }
+              }
+              
+              @if (attr.required) {
+                <span 
+                  (click)="updateAttributeRequired(attr.id, false)" 
+                  class="required-badge editable-badge"
+                >critical</span>
+              } @else {
+                <span 
+                  (click)="updateAttributeRequired(attr.id, true)" 
+                  class="optional-badge editable-badge"
+                >non-critical</span>
+              }
+            </div>
+            
+            <div class="attr-desc-line">
+              @if (isEditingAttributeField(attr.id, 'description')) {
+                <input 
+                  type="text" 
+                  class="inline-input attr-desc-input"
+                  [value]="editingAttributeFieldValue()"
+                  (input)="editingAttributeFieldValue.set($any($event.target).value)"
+                  (blur)="saveAttributeField(attr.id, 'description')"
+                  (keydown.enter)="saveAttributeField(attr.id, 'description'); $event.target.blur()"
+                  (keydown.escape)="cancelEditingAttributeField()"
+                  placeholder="Description (optional)"
+                  autofocus
+                />
+              } @else {
+                @if (attr.description) {
+                  <span (click)="startEditingAttributeField(attr, 'description')" class="attr-desc editable-text">{{ attr.description }}</span>
+                } @else {
+                  <span (click)="startEditingAttributeField(attr, 'description')" class="attr-desc editable-text placeholder">Click to add description</span>
+                }
+              }
+            </div>
+          </div>
+          <div class="attr-actions" (click)="$event.stopPropagation()">
+            <button class="btn-icon" (click)="deleteAttribute(attr.id)" title="Delete">🗑️</button>
+          </div>
+        </div>
+      }
+      
+      @if (isAddingAttribute()) {
+        <div class="attribute-form">
+          <div class="form-row">
+            <input 
+              type="text" 
+              class="inline-input"
+              [(ngModel)]="newAttribute().name"
+              placeholder="Attribute name"
+            />
+            <select class="inline-select" [(ngModel)]="newAttribute().type">
+              @for (type of attributeTypes; track type) {
+                <option [value]="type">{{ type }}</option>
+              }
+            </select>
+          </div>
+          
+          @if (isRelationshipType(newAttribute().type)) {
+            <div class="form-row">
+              <div class="search-container">
+                <input 
+                  type="text" 
+                  [ngModel]="dataModelSearchFilter()"
+                  (ngModelChange)="dataModelSearchFilter.set($event)"
+                  placeholder="Search data models..." 
+                  class="search-input"
+                />
+                @if (dataModelSearchFilter().trim()) {
+                  <button type="button" class="btn-clear-search" (click)="clearDataModelSearch()" title="Clear">×</button>
+                }
+              </div>
+              <select class="inline-select" [(ngModel)]="newAttribute().targetDataModelId">
+                <option value="">Select target model</option>
+                @for (targetModel of getAvailableDataModels(); track targetModel.id) {
+                  <option [value]="targetModel.id">{{ targetModel.name }}</option>
+                }
+              </select>
+              <select class="inline-select" [(ngModel)]="newAttribute().relationshipType">
+                @for (type of relationshipTypes; track type) {
+                  <option [value]="type">{{ type }}</option>
+                }
+              </select>
+            </div>
+          }
+          
+          <div class="form-row">
+            <input 
+              type="text" 
+              class="inline-input"
+              [(ngModel)]="newAttribute().description"
+              placeholder="Description (optional)"
+            />
+            <label class="checkbox-label">
+              <input type="checkbox" [(ngModel)]="newAttribute().required" />
+              Critical
+            </label>
+          </div>
+          
+          <div class="form-actions">
+            <button class="btn btn-small btn-primary" (click)="saveNewAttribute()">Save</button>
+            <button class="btn btn-small btn-secondary" (click)="cancelAddingAttribute()">Cancel</button>
+          </div>
+        </div>
+      } @else {
+        <div class="attribute-item add-attribute-item" (click)="startAddingAttribute()">
+          <span class="add-icon">+</span>
+          <span class="add-text">Add data element</span>
+        </div>
+      }
+    </div>
+  </div>
+</div>
+

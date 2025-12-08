@@ -1,0 +1,244 @@
+<div class="tool-card">
+  <div class="card-header">
+    @if (isEditingField('name')) {
+      <input 
+        type="text" 
+        class="inline-input title-input"
+        [value]="editingFieldValue()"
+        (input)="editingFieldValue.set($any($event.target).value)"
+        (blur)="saveField('name')"
+        (keydown.enter)="saveField('name'); $event.target.blur()"
+        (keydown.escape)="cancelEditingField()"
+        placeholder="Tool name"
+        autofocus
+      />
+    } @else {
+      <h3 (click)="startEditingField('name')" class="editable-title">{{ tool().name }}</h3>
+    }
+    <div class="card-actions">
+      <button class="btn-icon" (click)="deleteTool()" title="Delete">🗑️</button>
+    </div>
+  </div>
+  
+  @if (isEditingField('description')) {
+    <textarea 
+      class="inline-textarea"
+      [value]="editingFieldValue()"
+      (input)="editingFieldValue.set($any($event.target).value)"
+      (blur)="saveField('description')"
+      (keydown.escape)="cancelEditingField()"
+      placeholder="Description"
+      rows="2"
+      autofocus
+    ></textarea>
+  } @else {
+    <p class="description" (click)="startEditingField('description')">
+      {{ tool().description || 'Click to add description' }}
+    </p>
+  }
+  
+  <div class="use-cases-section">
+    <div class="section-header">
+      <h4>Linked Use Cases</h4>
+    </div>
+    
+    <div class="use-cases-list">
+      @for (mapping of (tool().useCaseToolMappings || []); track mapping.useCaseId) {
+        <div class="use-case-item" [class.editing]="isEditingUseCase(mapping.useCaseId)">
+          @if (isEditingUseCase(mapping.useCaseId)) {
+            <div class="use-case-selector-container">
+              <input 
+                type="text" 
+                class="use-case-search-input"
+                [ngModel]="useCaseSearchFilter()"
+                (ngModelChange)="useCaseSearchFilter.set($event)"
+                (blur)="handleUseCaseInputBlur(mapping.useCaseId)"
+                placeholder="Search use case..."
+                autofocus
+              />
+              <div class="use-case-dropdown" (mousedown)="$event.preventDefault()">
+                @if (useCaseSearchFilter().trim()) {
+                  @for (useCase of getFilteredUseCases(); track useCase.id) {
+                    <div 
+                      class="use-case-option"
+                      (mousedown)="updateUseCaseMapping(mapping.useCaseId, useCase.id)"
+                    >
+                      {{ getUseCaseName(useCase.id) }}
+                    </div>
+                  }
+                  @if (getFilteredUseCases().length === 0) {
+                    <div class="use-case-option no-results">No matching use cases</div>
+                  }
+                } @else {
+                  @for (useCase of useCases(); track useCase.id) {
+                    <div 
+                      class="use-case-option"
+                      (mousedown)="updateUseCaseMapping(mapping.useCaseId, useCase.id)"
+                    >
+                      {{ getUseCaseName(useCase.id) }}
+                    </div>
+                  }
+                }
+              </div>
+            </div>
+          } @else {
+            <span class="use-case-name editable-text" (click)="startEditingUseCase(mapping.useCaseId)">
+              {{ getUseCaseName(mapping.useCaseId) }}
+            </span>
+          }
+          <div class="use-case-actions" (click)="$event.stopPropagation()">
+            <button class="btn-icon" (click)="removeUseCase(mapping.useCaseId)" title="Remove">🗑️</button>
+          </div>
+        </div>
+      }
+      
+      @if (isAddingUseCase()) {
+        <div class="use-case-item editing">
+          <div class="use-case-selector-container">
+            <input 
+              type="text" 
+              class="use-case-search-input"
+              [ngModel]="useCaseSearchFilter()"
+              (ngModelChange)="useCaseSearchFilter.set($event)"
+              (blur)="handleAddUseCaseInputBlur()"
+              placeholder="Search use case..."
+              autofocus
+            />
+            <div class="use-case-dropdown" (mousedown)="$event.preventDefault()">
+              @if (useCaseSearchFilter().trim()) {
+                @for (useCase of getFilteredUseCases(); track useCase.id) {
+                  <div 
+                    class="use-case-option"
+                    (mousedown)="addUseCaseToTool(useCase.id)"
+                  >
+                    {{ getUseCaseName(useCase.id) }}
+                  </div>
+                }
+                @if (getFilteredUseCases().length === 0) {
+                  <div class="use-case-option no-results">No matching use cases</div>
+                }
+              } @else {
+                @for (useCase of useCases(); track useCase.id) {
+                  <div 
+                    class="use-case-option"
+                    (mousedown)="addUseCaseToTool(useCase.id)"
+                  >
+                    {{ getUseCaseName(useCase.id) }}
+                  </div>
+                }
+              }
+            </div>
+          </div>
+        </div>
+      } @else {
+        <div class="add-use-case-item" (click)="startAddingUseCase()">
+          <span class="add-icon">+</span>
+          <span class="add-text">Add use case</span>
+        </div>
+      }
+    </div>
+  </div>
+  
+  <div class="data-models-section">
+    <div class="section-header">
+      <h4>Linked Data Models</h4>
+    </div>
+    
+    <div class="data-models-list">
+      @for (impl of getLinkedDataModels(); track impl.dataModelId) {
+        <div class="data-model-item" [class.editing]="isEditingDataModel(impl.dataModelId)">
+          @if (isEditingDataModel(impl.dataModelId)) {
+            <div class="data-model-selector-container">
+              <input 
+                type="text" 
+                class="data-model-search-input"
+                [ngModel]="dataModelSearchFilter()"
+                (ngModelChange)="dataModelSearchFilter.set($event)"
+                (blur)="handleDataModelInputBlur(impl.dataModelId)"
+                placeholder="Search data model..."
+                autofocus
+              />
+              <div class="data-model-dropdown" (mousedown)="$event.preventDefault()">
+                @if (dataModelSearchFilter().trim()) {
+                  @for (dataModel of getFilteredDataModels(); track dataModel.id) {
+                    <div 
+                      class="data-model-option"
+                      (mousedown)="updateDataModelImplementation(impl.dataModelId, dataModel.id)"
+                    >
+                      {{ dataModel.name }}
+                    </div>
+                  }
+                  @if (getFilteredDataModels().length === 0) {
+                    <div class="data-model-option no-results">No matching data models</div>
+                  }
+                } @else {
+                  @for (dataModel of dataModels(); track dataModel.id) {
+                    <div 
+                      class="data-model-option"
+                      (mousedown)="updateDataModelImplementation(impl.dataModelId, dataModel.id)"
+                    >
+                      {{ dataModel.name }}
+                    </div>
+                  }
+                }
+              </div>
+            </div>
+          } @else {
+            <span class="data-model-name editable-text" (click)="startEditingDataModel(impl.dataModelId)">
+              {{ getDataModelName(impl.dataModelId) }}
+            </span>
+          }
+          <div class="data-model-actions" (click)="$event.stopPropagation()">
+            <button class="btn-icon" (click)="removeDataModel(impl.dataModelId)" title="Remove">🗑️</button>
+          </div>
+        </div>
+      }
+      
+      @if (isAddingDataModel()) {
+        <div class="data-model-item editing">
+          <div class="data-model-selector-container">
+            <input 
+              type="text" 
+              class="data-model-search-input"
+              [ngModel]="dataModelSearchFilter()"
+              (ngModelChange)="dataModelSearchFilter.set($event)"
+              (blur)="handleAddDataModelInputBlur()"
+              placeholder="Search data model..."
+              autofocus
+            />
+            <div class="data-model-dropdown" (mousedown)="$event.preventDefault()">
+              @if (dataModelSearchFilter().trim()) {
+                @for (dataModel of getFilteredDataModels(); track dataModel.id) {
+                  <div 
+                    class="data-model-option"
+                    (mousedown)="addDataModelToTool(dataModel.id)"
+                  >
+                    {{ dataModel.name }}
+                  </div>
+                }
+                @if (getFilteredDataModels().length === 0) {
+                  <div class="data-model-option no-results">No matching data models</div>
+                }
+              } @else {
+                @for (dataModel of dataModels(); track dataModel.id) {
+                  <div 
+                    class="data-model-option"
+                    (mousedown)="addDataModelToTool(dataModel.id)"
+                  >
+                    {{ dataModel.name }}
+                  </div>
+                }
+              }
+            </div>
+          </div>
+        </div>
+      } @else {
+        <div class="add-data-model-item" (click)="startAddingDataModel()">
+          <span class="add-icon">+</span>
+          <span class="add-text">Add data model</span>
+        </div>
+      }
+    </div>
+  </div>
+</div>
+

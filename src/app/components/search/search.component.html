@@ -1,0 +1,105 @@
+<div class="search-page">
+  <div class="header">
+    <h2>Search & Graph</h2>
+    <div class="header-controls">
+      <app-search-input
+        placeholder="Search entities..."
+        [value]="searchQuery()"
+        (valueChange)="searchQuery.set($event)"
+      />
+      <div class="filter-dropdown-container">
+        <button class="filter-dropdown-btn" (click)="toggleFilterDropdown()">
+          <span>{{ getSelectedFiltersLabel() }}</span>
+          <svg class="dropdown-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="m6 9 6 6 6-6"/>
+          </svg>
+        </button>
+        @if (filterDropdownOpen()) {
+          <div class="filter-dropdown" (click)="$event.stopPropagation()">
+            <label class="filter-option">
+              <input type="checkbox" [checked]="searchInPersonas()" (change)="toggleSearchFilter('personas')">
+              <span class="filter-color" style="background: #e0e7ff; border-color: #4338ca;"></span>
+              Personas
+            </label>
+            <label class="filter-option">
+              <input type="checkbox" [checked]="searchInUseCases()" (change)="toggleSearchFilter('useCases')">
+              <span class="filter-color" style="background: #fef3c7; border-color: #d97706;"></span>
+              Use Cases
+            </label>
+            <label class="filter-option">
+              <input type="checkbox" [checked]="searchInTools()" (change)="toggleSearchFilter('tools')">
+              <span class="filter-color" style="background: #d1fae5; border-color: #059669;"></span>
+              Tools
+            </label>
+            <label class="filter-option">
+              <input type="checkbox" [checked]="searchInDataModels()" (change)="toggleSearchFilter('dataModels')">
+              <span class="filter-color" style="background: #fce7f3; border-color: #be185d;"></span>
+              Data Models
+            </label>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+
+  <div class="graph-section">
+    <app-flow-graph
+      [searchQuery]="searchQuery()"
+      [highlightedNodeId]="highlightedNodeId()"
+      [searchFilters]="searchFilters()"
+      (nodeClicked)="onFlowNodeClicked($event)"
+      (nodeDoubleClicked)="onFlowNodeDoubleClicked($event)"
+      (nodeRightClicked)="onFlowNodeRightClicked($event)"
+      (viewNode)="onViewNode($event)"
+      (deleteNode)="onDeleteNode($event)"
+      (connectionCreated)="onConnectionCreated($event)"
+      (connectionDeleted)="onConnectionDeleted($event)"
+      (canvasClicked)="onCanvasClicked()"
+      (createPersona)="createNewPersona()"
+      (createUseCase)="createNewUseCase()"
+      (createTool)="createNewTool()"
+      (createDataModel)="createNewDataModel()"
+    />
+  </div>
+</div>
+
+<!-- Node Modal -->
+@if (showNodeModal()) {
+  <div class="modal-overlay" (click)="closeNodeModal()">
+    <div class="modal-content modal-large" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>{{ getModalNodeType() === 'persona' ? 'Persona' : getModalNodeType() === 'useCase' ? 'Use Case' : getModalNodeType() === 'tool' ? 'Tool' : 'Data Model' }}</h3>
+        <button class="btn-close" (click)="closeNodeModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <!-- Persona Card -->
+        @if (getModalNodeType() === 'persona') {
+          @if (getModalPersona(); as persona) {
+            <app-persona-card [persona]="persona" />
+          }
+        }
+        
+        <!-- Use Case Card -->
+        @if (getModalNodeType() === 'useCase') {
+          @if (getModalUseCase(); as useCase) {
+            <app-use-case-card [useCase]="useCase" />
+          }
+        }
+        
+        <!-- Tool Card -->
+        @if (getModalNodeType() === 'tool') {
+          @if (getModalTool(); as tool) {
+            <app-tool-card [tool]="tool" />
+          }
+        }
+        
+        <!-- Data Model Card -->
+        @if (getModalNodeType() === 'dataModel') {
+          @if (getModalDataModel(); as model) {
+            <app-data-model-card [dataModel]="model" />
+          }
+        }
+      </div>
+    </div>
+  </div>
+}

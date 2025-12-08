@@ -1,0 +1,228 @@
+<div class="use-case-card">
+  <div class="card-header">
+    <h3 class="title">
+      {{ useCase().action || 'New Use Case' }}
+    </h3>
+    <div class="card-actions">
+      <button class="btn-icon" (click)="duplicateUseCase()" title="Duplicate">📋</button>
+      <button class="btn-icon" (click)="deleteUseCase()" title="Delete">🗑️</button>
+    </div>
+  </div>
+  
+  <div class="user-story-section">
+    <div class="story-line">
+      <span class="story-label">As</span>
+      @if (isEditingPersona()) {
+        <div class="persona-selector">
+          <input 
+            type="text" 
+            class="inline-input persona-search-input"
+            [ngModel]="personaSearchFilter()"
+            (ngModelChange)="personaSearchFilter.set($event)"
+            (blur)="handlePersonaInputBlur()"
+            placeholder="Search or create persona..."
+            autofocus
+          />
+          <div class="persona-dropdown" (mousedown)="$event.preventDefault()">
+            @if (personaSearchFilter().trim()) {
+              @for (persona of getFilteredPersonas(); track persona.id) {
+                <div 
+                  class="persona-option"
+                  (mousedown)="updatePersona(persona.id)"
+                >
+                  {{ persona.name }}
+                </div>
+              }
+              @if (canCreatePersona()) {
+                <div 
+                  class="persona-option create-option"
+                  (mousedown)="createAndAssignPersona()"
+                >
+                  + Create "{{ personaSearchFilter() }}"
+                </div>
+              }
+              @if (getFilteredPersonas().length === 0 && !canCreatePersona()) {
+                <div class="persona-option no-results">No matching personas</div>
+              }
+            } @else {
+              @for (persona of personas(); track persona.id) {
+                <div 
+                  class="persona-option"
+                  (mousedown)="updatePersona(persona.id)"
+                >
+                  {{ persona.name }}
+                </div>
+              }
+            }
+          </div>
+        </div>
+      } @else {
+        <span 
+          (click)="startEditingPersona()" 
+          class="editable-text persona-text"
+        >
+          {{ useCase().persona ? getPersonaName(useCase().persona) : 'Select persona' }}
+        </span>
+      }
+    </div>
+    <div class="story-line">
+      <span class="story-label">I want to</span>
+      @if (isEditingField('action')) {
+        <input 
+          type="text" 
+          class="inline-input"
+          [value]="editingFieldValue()"
+          (input)="editingFieldValue.set($any($event.target).value)"
+          (blur)="saveField('action')"
+          (keydown.enter)="saveField('action'); $event.target.blur()"
+          (keydown.escape)="cancelEditingField()"
+          placeholder="action"
+          autofocus
+        />
+      } @else {
+        <span (click)="startEditingField('action')" class="editable-text">
+          {{ useCase().action || 'Click to add action' }}
+        </span>
+      }
+    </div>
+    <div class="story-line">
+      <span class="story-label">so that I can</span>
+      @if (isEditingField('goal')) {
+        <input 
+          type="text" 
+          class="inline-input"
+          [value]="editingFieldValue()"
+          (input)="editingFieldValue.set($any($event.target).value)"
+          (blur)="saveField('goal')"
+          (keydown.enter)="saveField('goal'); $event.target.blur()"
+          (keydown.escape)="cancelEditingField()"
+          placeholder="goal"
+          autofocus
+        />
+      } @else {
+        <span (click)="startEditingField('goal')" class="editable-text">
+          {{ useCase().goal || 'Click to add goal' }}
+        </span>
+      }
+    </div>
+  </div>
+  
+  <div class="tools-section">
+    <div class="section-header">
+      <h4>Linked Tools</h4>
+    </div>
+    
+    <div class="tools-list">
+      @for (mapping of (useCase().useCaseToolMappings || []); track mapping.toolId) {
+        <div class="tool-item">
+          @if (isEditingTool(mapping.toolId)) {
+            <div class="tool-selector-container">
+              <input 
+                type="text" 
+                class="tool-search-input"
+                [ngModel]="toolSearchFilter()"
+                (ngModelChange)="toolSearchFilter.set($event)"
+                (blur)="handleToolInputBlur(mapping.toolId)"
+                placeholder="Search or create tool..."
+                autofocus
+              />
+              <div class="tool-dropdown" (mousedown)="$event.preventDefault()">
+                @if (toolSearchFilter().trim()) {
+                  @for (tool of getFilteredTools(); track tool.id) {
+                    <div 
+                      class="tool-option"
+                      (mousedown)="updateToolMapping(mapping.toolId, tool.id)"
+                    >
+                      {{ tool.name }}
+                    </div>
+                  }
+                  @if (canCreateTool()) {
+                    <div 
+                      class="tool-option create-option"
+                      (mousedown)="createAndUpdateToolMapping(mapping.toolId)"
+                    >
+                      + Create "{{ toolSearchFilter() }}"
+                    </div>
+                  }
+                  @if (getFilteredTools().length === 0 && !canCreateTool()) {
+                    <div class="tool-option no-results">No matching tools</div>
+                  }
+                } @else {
+                  @for (tool of tools(); track tool.id) {
+                    <div 
+                      class="tool-option"
+                      (mousedown)="updateToolMapping(mapping.toolId, tool.id)"
+                    >
+                      {{ tool.name }}
+                    </div>
+                  }
+                }
+              </div>
+            </div>
+          } @else {
+            <span class="tool-name editable-text" (click)="startEditingTool(mapping.toolId)">
+              {{ getToolName(mapping.toolId) }}
+            </span>
+          }
+          <div class="tool-actions" (click)="$event.stopPropagation()">
+            <button class="btn-icon" (click)="removeTool(mapping.toolId)" title="Remove">🗑️</button>
+          </div>
+        </div>
+      }
+      
+      @if (isAddingTool()) {
+        <div class="tool-item">
+          <div class="tool-selector-container">
+            <input 
+              type="text" 
+              class="tool-search-input"
+              [ngModel]="toolSearchFilter()"
+              (ngModelChange)="toolSearchFilter.set($event)"
+              (blur)="handleAddToolInputBlur()"
+              placeholder="Search or create tool..."
+              autofocus
+            />
+            <div class="tool-dropdown" (mousedown)="$event.preventDefault()">
+              @if (toolSearchFilter().trim()) {
+                @for (tool of getFilteredTools(); track tool.id) {
+                  <div 
+                    class="tool-option"
+                    (mousedown)="addToolToUseCase(tool.id)"
+                  >
+                    {{ tool.name }}
+                  </div>
+                }
+                @if (canCreateTool()) {
+                  <div 
+                    class="tool-option create-option"
+                    (mousedown)="createAndAddTool()"
+                  >
+                    + Create "{{ toolSearchFilter() }}"
+                  </div>
+                }
+                @if (getFilteredTools().length === 0 && !canCreateTool()) {
+                  <div class="tool-option no-results">No matching tools</div>
+                }
+              } @else {
+                @for (tool of tools(); track tool.id) {
+                  <div 
+                    class="tool-option"
+                    (mousedown)="addToolToUseCase(tool.id)"
+                  >
+                    {{ tool.name }}
+                  </div>
+                }
+              }
+            </div>
+          </div>
+        </div>
+      } @else {
+        <div class="add-tool-item" (click)="startAddingTool()">
+          <span class="add-icon">+</span>
+          <span class="add-text">Add tool</span>
+        </div>
+      }
+    </div>
+  </div>
+</div>
+

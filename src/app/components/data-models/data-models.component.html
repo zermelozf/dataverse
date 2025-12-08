@@ -1,0 +1,65 @@
+<div class="data-models-container">
+  <div class="header">
+    <h2>Data Models</h2>
+    <div class="header-controls">
+      <app-search-input
+        placeholder="Search data models..."
+        [value]="searchQuery()"
+        (valueChange)="searchQuery.set($event)"
+      />
+      <button class="btn btn-primary" (click)="openAddModal()">+ Add Data Model</button>
+    </div>
+  </div>
+
+  <div class="models-grid">
+    @for (model of dataModels(); track model.id) {
+      <app-data-model-card [dataModel]="model" />
+    } @empty {
+      <div class="empty-state-large">
+        <p>No data models yet. Create your first one!</p>
+      </div>
+    }
+  </div>
+</div>
+
+<!-- Add Data Model Modal (keeping this as modal) -->
+@if (showAddModal()) {
+  <div class="modal-overlay" (click)="closeAddModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Add Data Model</h3>
+        <button class="btn-close" (click)="closeAddModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Name</label>
+          <input 
+            type="text" 
+            [(ngModel)]="newModel().name" 
+            placeholder="Enter model name"
+            [class.error]="addModalErrors().name"
+          />
+          @if (addModalErrors().name) {
+            <span class="error-message">{{ addModalErrors().name }}</span>
+          }
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <textarea 
+            [(ngModel)]="newModel().description" 
+            placeholder="Enter description" 
+            rows="3"
+            [class.error]="addModalErrors().description"
+          ></textarea>
+          @if (addModalErrors().description) {
+            <span class="error-message">{{ addModalErrors().description }}</span>
+          }
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeAddModal()">Cancel</button>
+        <button class="btn btn-primary" (click)="addDataModel()">Add</button>
+      </div>
+    </div>
+  </div>
+}

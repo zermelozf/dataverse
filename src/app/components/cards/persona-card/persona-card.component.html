@@ -1,0 +1,163 @@
+<div class="persona-card">
+  <div class="card-header">
+    @if (isEditingField('name')) {
+      <input 
+        type="text" 
+        class="inline-input title-input"
+        [value]="editingFieldValue()"
+        (input)="editingFieldValue.set($any($event.target).value)"
+        (blur)="saveField('name')"
+        (keydown.enter)="saveField('name'); $event.target.blur()"
+        (keydown.escape)="cancelEditingField()"
+        placeholder="Persona name"
+        autofocus
+      />
+    } @else {
+      <h3 (click)="startEditingField('name')" class="editable-title">
+        {{ persona().name || 'Click to add persona name' }}
+      </h3>
+    }
+    <div class="card-actions">
+      <button class="btn-icon" (click)="deletePersona()" title="Delete">🗑️</button>
+    </div>
+  </div>
+  
+  @if (isEditingField('description')) {
+    <textarea 
+      class="inline-textarea"
+      [value]="editingFieldValue()"
+      (input)="editingFieldValue.set($any($event.target).value)"
+      (blur)="saveField('description')"
+      (keydown.escape)="cancelEditingField()"
+      placeholder="Description"
+      rows="2"
+      autofocus
+    ></textarea>
+  } @else {
+    <p class="description" (click)="startEditingField('description')">
+      {{ persona().description || 'Click to add description' }}
+    </p>
+  }
+  
+  <div class="use-cases-section">
+    <div class="section-header">
+      <h4>Use Cases & Tools</h4>
+    </div>
+    
+    <div class="use-cases-list">
+      @for (mapping of (persona().personaUseCaseMappings || []); track mapping.useCaseId) {
+        <div class="use-case-item" [class.editing]="isEditingUseCase(mapping.useCaseId)">
+          @if (isEditingUseCase(mapping.useCaseId)) {
+            <div class="use-case-selector-container">
+              <input 
+                type="text" 
+                class="use-case-search-input"
+                [ngModel]="useCaseSearchFilter()"
+                (ngModelChange)="useCaseSearchFilter.set($event)"
+                (blur)="handleUseCaseInputBlur(mapping.useCaseId)"
+                placeholder="Search use case..."
+                autofocus
+              />
+              <div class="use-case-dropdown" (mousedown)="$event.preventDefault()">
+                @if (useCaseSearchFilter().trim()) {
+                  @for (useCase of getFilteredUseCases(); track useCase.id) {
+                    <div 
+                      class="use-case-option"
+                      (mousedown)="updateUseCaseMapping(mapping.useCaseId, useCase.id)"
+                    >
+                      {{ getUseCaseName(useCase.id) }}
+                    </div>
+                  }
+                  @if (getFilteredUseCases().length === 0) {
+                    <div class="use-case-option no-results">No matching use cases</div>
+                  }
+                } @else {
+                  @for (useCase of useCases(); track useCase.id) {
+                    <div 
+                      class="use-case-option"
+                      (mousedown)="updateUseCaseMapping(mapping.useCaseId, useCase.id)"
+                    >
+                      {{ getUseCaseName(useCase.id) }}
+                    </div>
+                  }
+                }
+              </div>
+            </div>
+          } @else {
+            <div class="use-case-content">
+              <span class="use-case-name editable-text" (click)="startEditingUseCase(mapping.useCaseId)">
+                {{ getUseCaseName(mapping.useCaseId) }}
+              </span>
+              @if ((mapping.toolIds || []).length > 0) {
+                <div class="tool-tags">
+                  @for (toolId of (mapping.toolIds || []); track toolId) {
+                    <span class="tool-tag">
+                      {{ getToolName(toolId) }}
+                      <button 
+                        class="tool-tag-remove" 
+                        (click)="toggleToolForPersonaUseCase(mapping.useCaseId, toolId); $event.stopPropagation()"
+                        title="Remove tool"
+                      >×</button>
+                    </span>
+                  }
+                </div>
+              }
+            </div>
+          }
+          <div class="use-case-actions" (click)="$event.stopPropagation()">
+            <button class="btn-icon" (click)="removeUseCase(mapping.useCaseId)" title="Remove">🗑️</button>
+          </div>
+        </div>
+      }
+      
+      @if (isAddingUseCase()) {
+        <div class="add-use-case-item">
+          <div class="use-case-selector-container">
+            <input 
+              type="text" 
+              class="use-case-search-input"
+              [ngModel]="useCaseSearchFilter()"
+              (ngModelChange)="useCaseSearchFilter.set($event)"
+              (blur)="handleAddUseCaseInputBlur()"
+              placeholder="Search or select use case..."
+              autofocus
+            />
+            <div class="use-case-dropdown" (mousedown)="$event.preventDefault()">
+              @if (useCaseSearchFilter().trim()) {
+                @for (useCase of getFilteredUseCases(); track useCase.id) {
+                  <div 
+                    class="use-case-option"
+                    (mousedown)="addUseCaseToPersona(useCase.id)"
+                  >
+                    {{ getUseCaseName(useCase.id) }}
+                  </div>
+                }
+                @if (getFilteredUseCases().length === 0) {
+                  <div class="use-case-option no-results">No matching use cases</div>
+                }
+              } @else {
+                @for (useCase of useCases(); track useCase.id) {
+                  @if (!isUseCaseMappedToPersona(useCase.id)) {
+                    <div 
+                      class="use-case-option"
+                      (mousedown)="addUseCaseToPersona(useCase.id)"
+                    >
+                      {{ getUseCaseName(useCase.id) }}
+                    </div>
+                  }
+                }
+              }
+            </div>
+          </div>
+          <button class="btn-icon" (click)="cancelAddingUseCase()" title="Cancel">✕</button>
+        </div>
+      } @else {
+        <div class="add-use-case-item" (click)="startAddingUseCase()">
+          <span class="add-icon">+</span>
+          <span>Add use case</span>
+        </div>
+      }
+    </div>
+  </div>
+</div>
+
