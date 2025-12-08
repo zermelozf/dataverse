@@ -1,20 +1,74 @@
 <div class="model-card">
   <div class="card-header">
-    @if (isEditingField('name')) {
-      <input 
-        type="text" 
-        class="inline-input title-input"
-        [value]="editingFieldValue()"
-        (input)="editingFieldValue.set($any($event.target).value)"
-        (blur)="saveField('name')"
-        (keydown.enter)="saveField('name'); $event.target.blur()"
-        (keydown.escape)="cancelEditingField()"
-        placeholder="Model name"
-        autofocus
-      />
-    } @else {
-      <h3 (click)="startEditingField('name')" class="editable-title">{{ dataModel().name }}</h3>
-    }
+    <div class="title-row">
+      @if (isEditingField('name')) {
+        <input 
+          type="text" 
+          class="inline-input title-input"
+          [value]="editingFieldValue()"
+          (input)="editingFieldValue.set($any($event.target).value)"
+          (blur)="saveField('name')"
+          (keydown.enter)="saveField('name'); $event.target.blur()"
+          (keydown.escape)="cancelEditingField()"
+          placeholder="Model name"
+          autofocus
+        />
+      } @else {
+        <h3 (click)="startEditingField('name')" class="editable-title">{{ dataModel().name }}</h3>
+      }
+      
+      <!-- Domain chip -->
+      @if (editingDomain()) {
+        <div class="domain-selector-container">
+          <input 
+            type="text" 
+            class="domain-search-input"
+            [ngModel]="domainSearchFilter()"
+            (ngModelChange)="domainSearchFilter.set($event)"
+            (blur)="handleDomainInputBlur()"
+            placeholder="Search or create domain..."
+            autofocus
+          />
+          <div class="domain-dropdown" (mousedown)="$event.preventDefault()">
+            @if (dataModel().domainId) {
+              <div class="domain-option remove-option" (mousedown)="removeDomain()">
+                <span class="remove-icon">×</span> Remove domain
+              </div>
+            }
+            @for (domain of getFilteredDomains(); track domain.id) {
+              <div 
+                class="domain-option"
+                [class.selected]="domain.id === dataModel().domainId"
+                (mousedown)="selectDomain(domain.id)"
+              >
+                <span class="domain-name">{{ domain.name }}</span>
+                @if (domain.domainOwner || domain.domainSteward) {
+                  <span class="domain-meta">
+                    @if (domain.domainOwner) { Owner: {{ domain.domainOwner }} }
+                    @if (domain.domainOwner && domain.domainSteward) { · }
+                    @if (domain.domainSteward) { Steward: {{ domain.domainSteward }} }
+                  </span>
+                }
+              </div>
+            }
+            @if (canCreateDomain()) {
+              <div class="domain-option create-option" (mousedown)="createAndSelectDomain()">
+                <span class="create-icon">+</span> Create "{{ domainSearchFilter() }}"
+              </div>
+            }
+            @if (getFilteredDomains().length === 0 && !canCreateDomain()) {
+              <div class="domain-option no-results">No domains found</div>
+            }
+          </div>
+        </div>
+      } @else {
+        @if (getDomainName()) {
+          <span class="domain-chip" (click)="startEditingDomain()">{{ getDomainName() }}</span>
+        } @else {
+          <span class="domain-chip placeholder" (click)="startEditingDomain()">+ Add domain</span>
+        }
+      }
+    </div>
     <div class="card-actions">
       <button class="btn-icon" (click)="deleteDataModel()" title="Delete">🗑️</button>
     </div>

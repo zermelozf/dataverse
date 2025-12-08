@@ -4,8 +4,10 @@ import { FormsModule } from '@angular/forms';
 import { PersonaService } from '../../../services/persona.service';
 import { UseCaseService } from '../../../services/use-case.service';
 import { ToolService } from '../../../services/tool.service';
+import { KPIService } from '../../../services/kpi.service';
 import { Persona } from '../../../models/persona';
 import { UseCase } from '../../../models/use-case';
+import { KPI } from '../../../models/kpi';
 
 @Component({
   selector: 'app-persona-card',
@@ -19,6 +21,13 @@ export class PersonaCardComponent {
   personas = computed(() => this.personaService.getPersonas()());
   useCases = computed(() => this.useCaseService.getUseCases()());
   tools = computed(() => this.toolService.getTools()());
+  kpis = computed(() => this.kpiService.getKPIs()());
+  
+  // Get KPIs for this persona
+  personaKPIs = computed(() => {
+    const kpiIds = this.persona().kpiIds || [];
+    return this.kpis().filter(k => kpiIds.includes(k.id));
+  });
 
   // Inline editing for name and description
   editingField = signal<{ field: 'name' | 'description' } | null>(null);
@@ -29,10 +38,15 @@ export class PersonaCardComponent {
   addingUseCase = signal<boolean>(false);
   useCaseSearchFilter = signal<string>('');
 
+  // KPI management
+  addingKPI = signal<boolean>(false);
+  kpiSearchFilter = signal<string>('');
+
   constructor(
     private personaService: PersonaService,
     private useCaseService: UseCaseService,
-    private toolService: ToolService
+    private toolService: ToolService,
+    private kpiService: KPIService
   ) {}
 
   // Inline editing methods
@@ -192,6 +206,86 @@ export class PersonaCardComponent {
 
   isUseCaseMappedToPersona(useCaseId: string): boolean {
     return (this.persona().personaUseCaseMappings || []).some(m => m.useCaseId === useCaseId);
+  }
+
+  // KPI management methods
+  startAddingKPI() {
+    this.addingKPI.set(true);
+    this.kpiSearchFilter.set('');
+  }
+
+  cancelAddingKPI() {
+    this.addingKPI.set(false);
+    this.kpiSearchFilter.set('');
+  }
+
+  isAddingKPI(): boolean {
+    return this.addingKPI();
+  }
+
+  getFilteredKPIs(): KPI[] {
+    const filter = this.kpiSearchFilter().toLowerCase().trim();
+    const currentKpiIds = this.persona().kpiIds || [];
+    // Filter out already assigned KPIs
+    const availableKPIs = this.kpis().filter(k => !currentKpiIds.includes(k.id));
+    
+    if (!filter) return availableKPIs;
+    
+    return availableKPIs.filter(k => 
+      k.name?.toLowerCase().includes(filter) ||
+      k.description?.toLowerCase().includes(filter)
+    );
+  }
+
+  canCreateKPI(): boolean {
+    const filter = this.kpiSearchFilter().trim();
+    if (!filter) return false;
+    return !this.kpis().some(k => k.name.toLowerCase() === filter.toLowerCase());
+  }
+
+  addKPIToPersona(kpiId: string) {
+    const persona = this.persona();
+    const kpiIds = [...(persona.kpiIds || [])];
+    if (!kpiIds.includes(kpiId)) {
+      kpiIds.push(kpiId);
+      this.personaService.updatePersona(persona.id, { kpiIds });
+    }
+    this.cancelAddingKPI();
+  }
+
+  async createAndAddKPI() {
+    const name = this.kpiSearchFilter().trim();
+    if (!name) return;
+
+    const newKPI = await this.kpiService.addKPI({
+      name,
+      description: '',
+      unit: '',
+      targetValue: ''
+    });
+
+    const persona = this.persona();
+    const kpiIds = [...(persona.kpiIds || []), newKPI.id];
+    this.personaService.updatePersona(persona.id, { kpiIds });
+    this.cancelAddingKPI();
+  }
+
+  removeKPI(kpiId: string) {
+    const persona = this.persona();
+    const kpiIds = (persona.kpiIds || []).filter(id => id !== kpiId);
+    this.personaService.updatePersona(persona.id, { kpiIds });
+  }
+
+  handleKPIInputBlur() {
+    setTimeout(() => {
+      if (!document.activeElement?.closest('.kpi-selector-container')) {
+        this.cancelAddingKPI();
+      }
+    }, 200);
+  }
+
+  getKPIName(id: string): string {
+    return this.kpis().find(k => k.id === id)?.name || 'Unknown';
   }
 }
 

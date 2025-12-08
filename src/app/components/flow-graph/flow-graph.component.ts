@@ -13,6 +13,7 @@ import { DataModelService } from '../../services/data-model.service';
 import { UseCaseService } from '../../services/use-case.service';
 import { ToolService } from '../../services/tool.service';
 import { PersonaService } from '../../services/persona.service';
+import { DomainService } from '../../services/domain.service';
 import { Persona } from '../../models/persona';
 import { UseCase } from '../../models/use-case';
 import { Tool } from '../../models/tool';
@@ -98,6 +99,7 @@ export class FlowGraphComponent implements AfterViewInit {
   private useCaseService = inject(UseCaseService);
   private toolService = inject(ToolService);
   private dataModelService = inject(DataModelService);
+  private domainService = inject(DomainService);
 
   ngAfterViewInit() {
     // Wait for vflow to be initialized, then fit view
@@ -521,9 +523,16 @@ export class FlowGraphComponent implements AfterViewInit {
               attr.name.toLowerCase().includes(query) ||
               (attr.type?.toLowerCase().includes(query) ?? false)
             );
+            // Check domain name
+            let domainMatch = false;
+            if (data.entity.domainId) {
+              const domain = this.domainService.getDomainById(data.entity.domainId);
+              domainMatch = domain?.name?.toLowerCase().includes(query) ?? false;
+            }
             matches = data.entity.name.toLowerCase().includes(query) ||
               (data.entity.description?.toLowerCase().includes(query) ?? false) ||
-              attributesMatch;
+              attributesMatch ||
+              domainMatch;
           }
           break;
       }

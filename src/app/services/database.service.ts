@@ -4,6 +4,8 @@ import { DataModel, DataModelImplementation } from '../models/data-model';
 import { Tool } from '../models/tool';
 import { UseCase } from '../models/use-case';
 import { Persona } from '../models/persona';
+import { Domain } from '../models/domain';
+import { KPI } from '../models/kpi';
 
 class DataverseDatabase extends Dexie {
   dataModels!: Table<DataModel, string>;
@@ -11,6 +13,8 @@ class DataverseDatabase extends Dexie {
   tools!: Table<Tool, string>;
   useCases!: Table<UseCase, string>;
   personas!: Table<Persona, string>;
+  domains!: Table<Domain, string>;
+  kpis!: Table<KPI, string>;
 
   constructor() {
     super('DataverseDB');
@@ -20,6 +24,23 @@ class DataverseDatabase extends Dexie {
       tools: 'id, name, createdAt, updatedAt',
       useCases: 'id, name, createdAt, updatedAt',
       personas: 'id, name, createdAt, updatedAt'
+    });
+    this.version(2).stores({
+      dataModels: 'id, name, domainId, version, createdAt, updatedAt',
+      implementations: 'id, dataModelId, toolId, createdAt, updatedAt',
+      tools: 'id, name, createdAt, updatedAt',
+      useCases: 'id, name, createdAt, updatedAt',
+      personas: 'id, name, createdAt, updatedAt',
+      domains: 'id, name'
+    });
+    this.version(3).stores({
+      dataModels: 'id, name, domainId, version, createdAt, updatedAt',
+      implementations: 'id, dataModelId, toolId, createdAt, updatedAt',
+      tools: 'id, name, createdAt, updatedAt',
+      useCases: 'id, name, createdAt, updatedAt',
+      personas: 'id, name, createdAt, updatedAt',
+      domains: 'id, name',
+      kpis: 'id, name, createdAt, updatedAt'
     });
   }
 }
@@ -32,6 +53,8 @@ export interface DataverseExport {
   tools: Tool[];
   useCases: UseCase[];
   personas: Persona[];
+  domains?: Domain[];
+  kpis?: KPI[];
 }
 
 @Injectable({
@@ -60,13 +83,23 @@ export class DatabaseService {
     return this.db.personas;
   }
 
+  get domains() {
+    return this.db.domains;
+  }
+
+  get kpis() {
+    return this.db.kpis;
+  }
+
   async exportData(): Promise<DataverseExport> {
-    const [dataModels, implementations, tools, useCases, personas] = await Promise.all([
+    const [dataModels, implementations, tools, useCases, personas, domains, kpis] = await Promise.all([
       this.db.dataModels.toArray(),
       this.db.implementations.toArray(),
       this.db.tools.toArray(),
       this.db.useCases.toArray(),
-      this.db.personas.toArray()
+      this.db.personas.toArray(),
+      this.db.domains.toArray(),
+      this.db.kpis.toArray()
     ]);
 
     return {
@@ -76,7 +109,9 @@ export class DatabaseService {
       implementations,
       tools,
       useCases,
-      personas
+      personas,
+      domains,
+      kpis
     };
   }
 
@@ -112,7 +147,9 @@ export class DatabaseService {
       this.db.implementations.clear(),
       this.db.tools.clear(),
       this.db.useCases.clear(),
-      this.db.personas.clear()
+      this.db.personas.clear(),
+      this.db.domains.clear(),
+      this.db.kpis.clear()
     ]);
 
     // Import new data using bulkPut (safer than bulkAdd, handles duplicates)
@@ -130,6 +167,12 @@ export class DatabaseService {
     }
     if (data.personas.length > 0) {
       await this.db.personas.bulkPut(data.personas);
+    }
+    if (data.domains && data.domains.length > 0) {
+      await this.db.domains.bulkPut(data.domains);
+    }
+    if (data.kpis && data.kpis.length > 0) {
+      await this.db.kpis.bulkPut(data.kpis);
     }
   }
 

@@ -2,11 +2,13 @@ import { Component, input, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DataModelService } from '../../../services/data-model.service';
+import { DomainService } from '../../../services/domain.service';
 import { 
   DataModel, 
   DataModelAttribute,
   RelationshipType 
 } from '../../../models/data-model';
+import { Domain } from '../../../models/domain';
 
 @Component({
   selector: 'app-data-model-card',
@@ -18,10 +20,15 @@ export class DataModelCardComponent {
   dataModel = input.required<DataModel>();
 
   dataModels = computed(() => this.dataModelService.getDataModels()());
+  domains = computed(() => this.domainService.getDomains()());
 
   // Inline editing for name and description
   editingField = signal<{ field: 'name' | 'description' } | null>(null);
   editingFieldValue = signal<string>('');
+
+  // Domain editing
+  editingDomain = signal<boolean>(false);
+  domainSearchFilter = signal<string>('');
 
   // Attribute editing
   editingAttributeField = signal<{ attributeId: string; field: 'name' | 'description' } | null>(null);
@@ -53,7 +60,8 @@ export class DataModelCardComponent {
   ];
 
   constructor(
-    private dataModelService: DataModelService
+    private dataModelService: DataModelService,
+    private domainService: DomainService
   ) {}
 
   // Field editing methods
@@ -279,6 +287,73 @@ export class DataModelCardComponent {
 
   clearDataModelSearch() {
     this.dataModelSearchFilter.set('');
+  }
+
+  // Domain editing methods
+  startEditingDomain() {
+    this.editingDomain.set(true);
+    this.domainSearchFilter.set('');
+  }
+
+  cancelEditingDomain() {
+    this.editingDomain.set(false);
+    this.domainSearchFilter.set('');
+  }
+
+  getDomainName(): string {
+    const domainId = this.dataModel().domainId;
+    if (!domainId) return '';
+    const domain = this.domains().find(d => d.id === domainId);
+    return domain?.name || '';
+  }
+
+  getFilteredDomains(): Domain[] {
+    const filter = this.domainSearchFilter().toLowerCase().trim();
+    const allDomains = this.domains();
+    if (!filter) return allDomains;
+    return allDomains.filter(d => 
+      d.name.toLowerCase().includes(filter) ||
+      d.domainOwner?.toLowerCase().includes(filter) ||
+      d.domainSteward?.toLowerCase().includes(filter)
+    );
+  }
+
+  canCreateDomain(): boolean {
+    const filter = this.domainSearchFilter().trim();
+    if (!filter) return false;
+    return !this.domains().some(d => d.name.toLowerCase() === filter.toLowerCase());
+  }
+
+  selectDomain(domainId: string) {
+    this.dataModelService.updateDataModel(this.dataModel().id, { domainId });
+    this.cancelEditingDomain();
+  }
+
+  removeDomain() {
+    this.dataModelService.updateDataModel(this.dataModel().id, { domainId: undefined });
+    this.cancelEditingDomain();
+  }
+
+  async createAndSelectDomain() {
+    const name = this.domainSearchFilter().trim();
+    if (!name) return;
+
+    const newDomain = await this.domainService.addDomain({
+      name,
+      domainOwner: '',
+      domainSteward: ''
+    });
+    this.dataModelService.updateDataModel(this.dataModel().id, { domainId: newDomain.id });
+    this.cancelEditingDomain();
+  }
+
+  handleDomainInputBlur() {
+    // Delay to allow click events on dropdown items
+    setTimeout(() => {
+      if (!document.activeElement?.closest('.domain-selector-container')) {
+        this.cancelEditingDomain();
+      }
+    }, 200);
   }
 
   deleteDataModel() {

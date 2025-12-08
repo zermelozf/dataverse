@@ -23,6 +23,7 @@ export interface DataModel {
   id: string;
   name: string;
   description: string;
+  domainId?: string;
   attributes: DataModelAttribute[];
   createdAt: Date;
   updatedAt: Date;

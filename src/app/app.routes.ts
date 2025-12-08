@@ -5,6 +5,8 @@ import { UseCasesComponent } from './components/use-cases/use-cases.component';
 import { ToolsComponent } from './components/tools/tools.component';
 import { PersonasComponent } from './components/personas/personas.component';
 import { SearchComponent } from './components/search/search.component';
+import { DomainsComponent } from './components/domains/domains.component';
+import { KPIsComponent } from './components/kpis/kpis.component';
 
 export const routes: Routes = [
   {
@@ -35,6 +37,14 @@ export const routes: Routes = [
       {
         path: 'personas',
         component: PersonasComponent
+      },
+      {
+        path: 'domains',
+        component: DomainsComponent
+      },
+      {
+        path: 'kpis',
+        component: KPIsComponent
       }
     ]
   }

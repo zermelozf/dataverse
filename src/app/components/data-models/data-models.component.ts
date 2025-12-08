@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DataModelService } from '../../services/data-model.service';
 import { ToolService } from '../../services/tool.service';
+import { DomainService } from '../../services/domain.service';
 import { 
   DataModel, 
   DataModelImplementation, 
@@ -23,18 +24,32 @@ export class DataModelsComponent {
   searchQuery = signal('');
   
   allDataModels = computed(() => this.dataModelService.getDataModels()());
+  domains = computed(() => this.domainService.getDomains()());
+  
   dataModels = computed(() => {
     const query = this.searchQuery().toLowerCase().trim();
     const all = this.allDataModels();
     if (!query) return all;
-    return all.filter(dm => 
-      dm.name?.toLowerCase().includes(query) ||
-      dm.description?.toLowerCase().includes(query) ||
-      dm.attributes?.some(attr => 
+    
+    return all.filter(dm => {
+      // Search in name and description
+      if (dm.name?.toLowerCase().includes(query)) return true;
+      if (dm.description?.toLowerCase().includes(query)) return true;
+      
+      // Search in domain name
+      if (dm.domainId) {
+        const domain = this.domains().find(d => d.id === dm.domainId);
+        if (domain?.name?.toLowerCase().includes(query)) return true;
+      }
+      
+      // Search in attributes
+      if (dm.attributes?.some(attr => 
         attr.name?.toLowerCase().includes(query) ||
         attr.description?.toLowerCase().includes(query)
-      )
-    );
+      )) return true;
+      
+      return false;
+    });
   });
   tools = computed(() => this.toolService.getTools()());
   implementations = computed(() => this.dataModelService.getImplementations()());
@@ -93,7 +108,8 @@ export class DataModelsComponent {
 
   constructor(
     private dataModelService: DataModelService,
-    private toolService: ToolService
+    private toolService: ToolService,
+    private domainService: DomainService
   ) {}
 
   // Individual field editing with auto-save
