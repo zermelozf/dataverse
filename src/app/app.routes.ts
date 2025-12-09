@@ -7,6 +7,7 @@ import { PersonasComponent } from './components/personas/personas.component';
 import { SearchComponent } from './components/search/search.component';
 import { DomainsComponent } from './components/domains/domains.component';
 import { KPIsComponent } from './components/kpis/kpis.component';
+import { OverviewComponent } from './components/overview/overview.component';
 
 export const routes: Routes = [
   {
@@ -18,6 +19,10 @@ export const routes: Routes = [
     path: 'dashboard',
     component: DashboardComponent,
     children: [
+      {
+        path: 'overview',
+        component: OverviewComponent
+      },
       {
         path: 'search',
         component: SearchComponent

@@ -4,6 +4,7 @@ export interface KPI {
   description?: string;
   unit?: string; // e.g., '%', '$', 'count', 'days'
   targetValue?: string;
+  useCaseIds?: string[]; // Use cases that cover/address this KPI
   createdAt: Date;
   updatedAt: Date;
 }

@@ -7,6 +7,17 @@ export type RelationshipType =
   | 'aggregation' 
   | 'inheritance';
 
+export interface DataQualityRule {
+  enabled: boolean;
+  rule?: string; // Description of the rule
+}
+
+export interface DataQualityRules {
+  consistency?: DataQualityRule; // Data should be consistent across systems
+  validity?: DataQualityRule; // Data should conform to defined formats/constraints
+  freshness?: DataQualityRule; // Data should be up-to-date
+}
+
 export interface DataModelAttribute {
   id: string;
   name: string;
@@ -17,6 +28,8 @@ export interface DataModelAttribute {
   // Relationship-specific fields (only used when type === 'relationship')
   targetDataModelId?: string; // Reference to another DataModel
   relationshipType?: RelationshipType;
+  // Data quality rules
+  dataQuality?: DataQualityRules;
 }
 
 export interface DataModel {

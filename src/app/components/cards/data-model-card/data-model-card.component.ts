@@ -6,7 +6,9 @@ import { DomainService } from '../../../services/domain.service';
 import { 
   DataModel, 
   DataModelAttribute,
-  RelationshipType 
+  RelationshipType,
+  DataQualityRules,
+  DataQualityRule
 } from '../../../models/data-model';
 import { Domain } from '../../../models/domain';
 
@@ -47,6 +49,12 @@ export class DataModelCardComponent {
   });
 
   dataModelSearchFilter = signal('');
+
+  // Data quality editing
+  editingDataQuality = signal<string | null>(null); // attributeId
+  editingDataQualityType = signal<'consistency' | 'validity' | 'freshness' | null>(null);
+  editingDataQualityRule = signal<string>('');
+  dataQualityTypes = ['consistency', 'validity', 'freshness'] as const;
 
   attributeTypes = ['string', 'number', 'boolean', 'Date', 'object', 'array', 'CustomType', 'relationship'];
   relationshipTypes: RelationshipType[] = [
@@ -359,6 +367,96 @@ export class DataModelCardComponent {
   deleteDataModel() {
     if (confirm('Are you sure you want to delete this data model?')) {
       this.dataModelService.deleteDataModel(this.dataModel().id);
+    }
+  }
+
+  // Data Quality Rule methods
+  hasDataQualityRule(attr: DataModelAttribute, type: 'consistency' | 'validity' | 'freshness'): boolean {
+    const rule = attr.dataQuality?.[type]?.rule;
+    return !!rule && rule.trim().length > 0;
+  }
+
+  getDataQualityRule(attr: DataModelAttribute, type: 'consistency' | 'validity' | 'freshness'): string {
+    return attr.dataQuality?.[type]?.rule || '';
+  }
+
+  startEditingDataQualityRule(attributeId: string, type: 'consistency' | 'validity' | 'freshness') {
+    const model = this.dataModel();
+    const attr = model.attributes?.find(a => a.id === attributeId);
+    const currentRule = attr?.dataQuality?.[type]?.rule || '';
+    
+    this.editingDataQuality.set(attributeId);
+    this.editingDataQualityType.set(type);
+    this.editingDataQualityRule.set(currentRule);
+  }
+
+  cancelEditingDataQualityRule() {
+    this.editingDataQuality.set(null);
+    this.editingDataQualityType.set(null);
+    this.editingDataQualityRule.set('');
+  }
+
+  saveDataQualityRule(attributeId: string, type: 'consistency' | 'validity' | 'freshness') {
+    const model = this.dataModel();
+    const rule = this.editingDataQualityRule().trim();
+    
+    const attributes = (model.attributes || []).map(attr => {
+      if (attr.id === attributeId) {
+        const dataQuality = attr.dataQuality ? { ...attr.dataQuality } : {};
+        dataQuality[type] = {
+          enabled: rule.length > 0,
+          rule: rule
+        };
+        return { ...attr, dataQuality };
+      }
+      return attr;
+    });
+
+    this.dataModelService.updateDataModel(model.id, { attributes });
+    this.cancelEditingDataQualityRule();
+  }
+
+  isEditingDataQualityRule(attributeId: string, type: 'consistency' | 'validity' | 'freshness'): boolean {
+    return this.editingDataQuality() === attributeId && this.editingDataQualityType() === type;
+  }
+
+  isEditingDataQualityRuleForAttr(attributeId: string): boolean {
+    return this.editingDataQuality() === attributeId;
+  }
+
+  getDataQualityBadgeClass(attr: DataModelAttribute, type: 'consistency' | 'validity' | 'freshness'): string {
+    const hasRule = this.hasDataQualityRule(attr, type);
+    return hasRule ? 'dq-badge active' : 'dq-badge inactive';
+  }
+
+  getDataQualityTypeName(type: 'consistency' | 'validity' | 'freshness' | null): string {
+    if (!type) return '';
+    return type.charAt(0).toUpperCase() + type.slice(1);
+  }
+
+  getDataQualityPlaceholder(type: 'consistency' | 'validity' | 'freshness' | null): string {
+    switch (type) {
+      case 'consistency':
+        return 'e.g., "Values must match across source systems", "No duplicate records allowed"...';
+      case 'validity':
+        return 'e.g., "Must be a valid email format", "Value must be between 0 and 100"...';
+      case 'freshness':
+        return 'e.g., "Data must be updated within 24 hours", "Timestamp must be within last 7 days"...';
+      default:
+        return 'Enter data quality rule...';
+    }
+  }
+
+  getDataQualityDescription(type: 'consistency' | 'validity' | 'freshness' | null): string {
+    switch (type) {
+      case 'consistency':
+        return 'Consistency rules ensure data values are uniform and match across different systems, databases, or time periods.';
+      case 'validity':
+        return 'Validity rules ensure data conforms to defined formats, constraints, and business rules.';
+      case 'freshness':
+        return 'Freshness rules ensure data is up-to-date and within acceptable time thresholds.';
+      default:
+        return '';
     }
   }
 

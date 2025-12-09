@@ -95,6 +95,54 @@
     }
   </div>
   
+  <!-- Use Cases Section -->
+  <div class="use-cases-section">
+    <span class="section-label">Covered by Use Cases</span>
+    <div class="use-cases-list">
+      @for (useCase of kpiUseCases(); track useCase.id) {
+        <div class="use-case-item">
+          <span class="use-case-name">{{ getUseCaseName(useCase.id) }}</span>
+          <button class="btn-icon-small" (click)="removeUseCase(useCase.id)" title="Remove">×</button>
+        </div>
+      }
+      
+      @if (isAddingUseCase()) {
+        <div class="add-use-case-item">
+          <div class="use-case-selector-container">
+            <input 
+              type="text" 
+              class="use-case-search-input"
+              [ngModel]="useCaseSearchFilter()"
+              (ngModelChange)="useCaseSearchFilter.set($event)"
+              (blur)="handleUseCaseInputBlur()"
+              placeholder="Search use cases..."
+              autofocus
+            />
+            <div class="use-case-dropdown" (mousedown)="$event.preventDefault()">
+              @for (useCase of getFilteredUseCases(); track useCase.id) {
+                <div 
+                  class="use-case-option"
+                  (mousedown)="addUseCaseToKPI(useCase.id)"
+                >
+                  {{ getUseCaseName(useCase.id) }}
+                </div>
+              }
+              @if (getFilteredUseCases().length === 0) {
+                <div class="use-case-option no-results">No matching use cases</div>
+              }
+            </div>
+          </div>
+          <button class="btn-icon-small" (click)="cancelAddingUseCase()" title="Cancel">✕</button>
+        </div>
+      } @else {
+        <div class="add-use-case-btn" (click)="startAddingUseCase()">
+          <span class="add-icon">+</span>
+          <span>Add use case</span>
+        </div>
+      }
+    </div>
+  </div>
+  
   @if (kpiPersonas().length > 0) {
     <div class="personas-section">
       <span class="section-label">Personas ({{ kpiPersonas().length }})</span>

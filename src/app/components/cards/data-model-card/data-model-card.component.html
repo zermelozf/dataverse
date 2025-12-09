@@ -214,6 +214,40 @@
                 }
               }
             </div>
+            
+            <!-- Data Quality Rules -->
+            <div class="attr-dq-line">
+              <span class="dq-label">DQ Rules:</span>
+              <div class="dq-badges">
+                <!-- Consistency -->
+                <div class="dq-badge-wrapper">
+                  <span 
+                    [class]="getDataQualityBadgeClass(attr, 'consistency')"
+                    (click)="startEditingDataQualityRule(attr.id, 'consistency')"
+                    [title]="getDataQualityRule(attr, 'consistency') || 'Click to add consistency rule'"
+                  >C</span>
+                </div>
+                
+                <!-- Validity -->
+                <div class="dq-badge-wrapper">
+                  <span 
+                    [class]="getDataQualityBadgeClass(attr, 'validity')"
+                    (click)="startEditingDataQualityRule(attr.id, 'validity')"
+                    [title]="getDataQualityRule(attr, 'validity') || 'Click to add validity rule'"
+                  >V</span>
+                </div>
+                
+                <!-- Freshness -->
+                <div class="dq-badge-wrapper">
+                  <span 
+                    [class]="getDataQualityBadgeClass(attr, 'freshness')"
+                    (click)="startEditingDataQualityRule(attr.id, 'freshness')"
+                    [title]="getDataQualityRule(attr, 'freshness') || 'Click to add freshness rule'"
+                  >F</span>
+                </div>
+              </div>
+            </div>
+            
           </div>
           <div class="attr-actions" (click)="$event.stopPropagation()">
             <button class="btn-icon" (click)="deleteAttribute(attr.id)" title="Delete">🗑️</button>
@@ -292,4 +326,36 @@
     </div>
   </div>
 </div>
+
+<!-- Data Quality Rule Modal -->
+@if (editingDataQuality()) {
+  <div class="dq-modal-overlay" (click)="cancelEditingDataQualityRule()">
+    <div class="dq-modal" (click)="$event.stopPropagation()">
+      <div class="dq-modal-header">
+        <h3>{{ getDataQualityTypeName(editingDataQualityType()) }} Rule</h3>
+        <button class="btn-close" (click)="cancelEditingDataQualityRule()" title="Close">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 6L6 18M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      <div class="dq-modal-body">
+        <p class="dq-modal-description">{{ getDataQualityDescription(editingDataQualityType()) }}</p>
+        <label class="dq-modal-label">Rule Definition</label>
+        <textarea 
+          class="dq-modal-textarea"
+          [value]="editingDataQualityRule()"
+          (input)="editingDataQualityRule.set($any($event.target).value)"
+          [placeholder]="getDataQualityPlaceholder(editingDataQualityType())"
+          rows="5"
+          autofocus
+        ></textarea>
+      </div>
+      <div class="dq-modal-footer">
+        <button class="btn btn-secondary" (click)="cancelEditingDataQualityRule()">Cancel</button>
+        <button class="btn btn-primary" (click)="saveDataQualityRule(editingDataQuality()!, editingDataQualityType()!)">Save Rule</button>
+      </div>
+    </div>
+  </div>
+}
 
