@@ -142,16 +142,5 @@
       }
     </div>
   </div>
-  
-  @if (kpiPersonas().length > 0) {
-    <div class="personas-section">
-      <span class="section-label">Personas ({{ kpiPersonas().length }})</span>
-      <div class="personas-list">
-        @for (persona of kpiPersonas(); track persona.id) {
-          <span class="persona-chip">{{ persona.name }}</span>
-        }
-      </div>
-    </div>
-  }
 </div>
 

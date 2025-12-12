@@ -506,8 +506,7 @@ export class FlowGraphComponent implements AfterViewInit {
           break;
         case 'useCase':
           if (filters.useCases) {
-            matches = (data.entity.name?.toLowerCase().includes(query) ?? false) ||
-              (data.entity.action?.toLowerCase().includes(query) ?? false) ||
+            matches = (data.entity.action?.toLowerCase().includes(query) ?? false) ||
               (data.entity.goal?.toLowerCase().includes(query) ?? false);
           }
           break;

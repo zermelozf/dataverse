@@ -51,6 +51,14 @@ export class KPIService {
     return this.kpisSignal().find(k => k.id === id);
   }
 
+  getDashboardKPIs(): KPI[] {
+    return this.kpisSignal().filter(k => k.showOnDashboard);
+  }
+
+  async toggleDashboardVisibility(id: string, show: boolean) {
+    await this.updateKPI(id, { showOnDashboard: show });
+  }
+
   private generateId(): string {
     return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
   }

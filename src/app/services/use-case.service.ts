@@ -31,19 +31,6 @@ export class UseCaseService {
       const useCases = await this.db.useCases.toArray();
       // Migrate old use cases that have name/description to persona/action/goal format
       const useCasesWithDates = useCases.map((uc: any) => {
-        // If old format (has name/description but no persona), migrate to new format
-        if (uc.name && !uc.persona && !uc.action) {
-          return {
-            ...uc,
-            name: uc.name || '',
-            persona: '', // Will need to be set manually
-            action: uc.description || '',
-            goal: '',
-            toolIds: uc.toolIds || [],
-            createdAt: new Date(uc.createdAt),
-            updatedAt: new Date(uc.updatedAt)
-          };
-        }
         // Migrate old toolIds to useCaseToolMappings
         let mappings = uc.useCaseToolMappings || [];
         if (uc.toolIds && uc.toolIds.length > 0 && mappings.length === 0) {
@@ -53,14 +40,13 @@ export class UseCaseService {
           }));
         }
         
-        // If use case doesn't have a name, set it to action or empty string
-        const useCaseName = uc.name || uc.action || '';
+        // If old format had name but no action, use name as action
+        const actionValue = uc.action || uc.name || '';
         
         return {
           ...uc,
-          name: useCaseName,
           persona: uc.persona || '',
-          action: uc.action || '',
+          action: actionValue,
           goal: uc.goal || '',
           useCaseToolMappings: mappings,
           createdAt: new Date(uc.createdAt),
@@ -143,7 +129,6 @@ export class UseCaseService {
     
     const newUseCase: UseCase = {
       ...useCase,
-      name: useCase.name || '',
       useCaseToolMappings: mappings,
       id: useCaseId,
       createdAt: new Date(),

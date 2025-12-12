@@ -32,22 +32,7 @@
       </div>
       <div class="modal-body">
         <div class="form-group">
-          <label>Name</label>
-          <input 
-            type="text" 
-            [(ngModel)]="newUseCase().name" 
-            placeholder="Enter use case name"
-            [class.error]="addModalErrors().name"
-          />
-          @if (addModalErrors().name) {
-            <span class="error-message">{{ addModalErrors().name }}</span>
-          }
-        </div>
-        <div class="form-group">
           <label>As <span class="story-hint">(Persona)</span></label>
-          @if (addModalErrors().persona) {
-            <span class="error-message">{{ addModalErrors().persona }}</span>
-          }
           @if (editingPersonaInModal()) {
             <div class="persona-selector">
               <input 
@@ -95,7 +80,6 @@
           } @else {
             <div 
               class="persona-display" 
-              [class.error]="addModalErrors().persona"
               (click)="editingPersonaInModal.set(true)"
             >
               @if (newUseCase().persona) {
@@ -194,6 +178,24 @@
                 <span class="add-text">Add tool</span>
               </div>
             }
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Current Version</label>
+            <input 
+              type="text" 
+              [(ngModel)]="newUseCase().currentVersion" 
+              placeholder="e.g., 1.0.0"
+            />
+          </div>
+          <div class="form-group">
+            <label>Target Version</label>
+            <input 
+              type="text" 
+              [(ngModel)]="newUseCase().targetVersion" 
+              placeholder="e.g., 2.0.0"
+            />
           </div>
         </div>
       </div>

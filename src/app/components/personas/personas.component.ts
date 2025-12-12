@@ -134,10 +134,9 @@ export class PersonasComponent {
     if (!filter) return this.useCases();
     
     return this.useCases().filter(uc => {
-      const name = uc.name?.toLowerCase() || '';
       const action = uc.action?.toLowerCase() || '';
       const goal = uc.goal?.toLowerCase() || '';
-      return name.includes(filter) || action.includes(filter) || goal.includes(filter);
+      return action.includes(filter) || goal.includes(filter);
     });
   }
 

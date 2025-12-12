@@ -257,9 +257,8 @@ export class SearchComponent {
 
   async createNewUseCase() {
     const newUseCase = await this.useCaseService.addUseCase({
-      name: 'New Use Case',
       persona: '',
-      action: '',
+      action: 'New Use Case',
       goal: '',
       useCaseToolMappings: []
     });

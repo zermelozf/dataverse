@@ -1,0 +1,199 @@
+<div class="project-card">
+  <div class="card-header">
+    @if (isEditingField('name')) {
+      <input 
+        type="text" 
+        class="inline-input title-input"
+        [value]="editingFieldValue()"
+        (input)="editingFieldValue.set($any($event.target).value)"
+        (blur)="saveField('name')"
+        (keydown.enter)="saveField('name'); $event.target.blur()"
+        (keydown.escape)="cancelEditingField()"
+        placeholder="Project name"
+        autofocus
+      />
+    } @else {
+      <h3 (click)="startEditingField('name')" class="editable-title">{{ project().name }}</h3>
+    }
+    <div class="card-actions">
+      <button class="btn-icon" (click)="deleteProject()" title="Delete">🗑️</button>
+    </div>
+  </div>
+  
+  <!-- Use Cases Section -->
+  <div class="use-cases-section">
+    <span class="section-label">Use Cases</span>
+    <div class="use-cases-list">
+      @for (useCase of linkedUseCases(); track useCase.id) {
+        <div class="use-case-item">
+          <span class="use-case-name">{{ useCase.action }}</span>
+          <button class="btn-icon-small" (click)="removeUseCase(useCase.id)" title="Remove">×</button>
+        </div>
+      }
+      
+      @if (isAddingUseCase()) {
+        <div class="add-use-case-item">
+          <div class="use-case-selector-container">
+            <input 
+              type="text" 
+              class="use-case-search-input"
+              [ngModel]="useCaseSearchFilter()"
+              (ngModelChange)="useCaseSearchFilter.set($event)"
+              (blur)="handleUseCaseInputBlur()"
+              placeholder="Search use cases..."
+              autofocus
+            />
+            <div class="use-case-dropdown" (mousedown)="$event.preventDefault()">
+              @for (useCase of getFilteredUseCases(); track useCase.id) {
+                <div 
+                  class="use-case-option"
+                  (mousedown)="addUseCaseToProject(useCase.id)"
+                >
+                  {{ useCase.action }}
+                </div>
+              }
+              @if (getFilteredUseCases().length === 0) {
+                <div class="use-case-option no-results">No matching use cases</div>
+              }
+            </div>
+          </div>
+          <button class="btn-icon-small" (click)="cancelAddingUseCase()" title="Cancel">✕</button>
+        </div>
+      } @else {
+        <div class="add-use-case-btn" (click)="startAddingUseCase()">
+          <span class="add-icon">+</span>
+          <span>Add Use Case</span>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- KPIs Section with Values -->
+  <div class="kpis-section">
+    <span class="section-label">KPIs</span>
+    <div class="kpis-list">
+      @for (mapping of projectKPIMappings(); track mapping.kpiId) {
+        <div class="kpi-mapping-item">
+          <div class="kpi-mapping-header">
+            <span class="kpi-name">{{ mapping.kpi?.name }}</span>
+            @if (mapping.kpi?.unit) {
+              <span class="kpi-unit">({{ mapping.kpi?.unit }})</span>
+            }
+            <button class="btn-icon-small" (click)="removeKPI(mapping.kpiId)" title="Remove">×</button>
+          </div>
+          <div class="kpi-mapping-values">
+            <div class="kpi-mapping-value">
+              <span class="value-label">Current</span>
+              @if (isEditingKPIValue(mapping.kpiId, 'currentValue')) {
+                <input 
+                  type="text" 
+                  class="inline-input small"
+                  [value]="editingKPIValueContent()"
+                  (input)="editingKPIValueContent.set($any($event.target).value)"
+                  (blur)="saveKPIValue(mapping.kpiId, 'currentValue')"
+                  (keydown.enter)="saveKPIValue(mapping.kpiId, 'currentValue'); $event.target.blur()"
+                  (keydown.escape)="cancelEditingKPIValue()"
+                  placeholder="Value"
+                  autofocus
+                />
+              } @else {
+                <span 
+                  (click)="startEditingKPIValue(mapping.kpiId, 'currentValue')" 
+                  class="value-text editable-text"
+                  [class.placeholder]="!mapping.currentValue"
+                >
+                  {{ mapping.currentValue || '–' }}
+                </span>
+              }
+            </div>
+            <div class="kpi-mapping-value">
+              <span class="value-label">Target</span>
+              @if (isEditingKPIValue(mapping.kpiId, 'targetValue')) {
+                <input 
+                  type="text" 
+                  class="inline-input small"
+                  [value]="editingKPIValueContent()"
+                  (input)="editingKPIValueContent.set($any($event.target).value)"
+                  (blur)="saveKPIValue(mapping.kpiId, 'targetValue')"
+                  (keydown.enter)="saveKPIValue(mapping.kpiId, 'targetValue'); $event.target.blur()"
+                  (keydown.escape)="cancelEditingKPIValue()"
+                  placeholder="Value"
+                  autofocus
+                />
+              } @else {
+                <span 
+                  (click)="startEditingKPIValue(mapping.kpiId, 'targetValue')" 
+                  class="value-text editable-text"
+                  [class.placeholder]="!mapping.targetValue"
+                >
+                  {{ mapping.targetValue || '–' }}
+                </span>
+              }
+            </div>
+          </div>
+        </div>
+      }
+      
+      @if (isAddingKPI()) {
+        <div class="add-kpi-item">
+          <div class="kpi-selector-container">
+            <input 
+              type="text" 
+              class="kpi-search-input"
+              [ngModel]="kpiSearchFilter()"
+              (ngModelChange)="kpiSearchFilter.set($event)"
+              (blur)="handleKPIInputBlur()"
+              placeholder="Search KPIs..."
+              autofocus
+            />
+            <div class="kpi-dropdown" (mousedown)="$event.preventDefault()">
+              @for (kpi of getFilteredKPIs(); track kpi.id) {
+                <div 
+                  class="kpi-option"
+                  (mousedown)="addKPIToProject(kpi.id)"
+                >
+                  {{ kpi.name }}
+                  @if (kpi.unit) {
+                    <span class="option-hint">({{ kpi.unit }})</span>
+                  }
+                </div>
+              }
+              @if (getFilteredKPIs().length === 0) {
+                <div class="kpi-option no-results">No matching KPIs</div>
+              }
+            </div>
+          </div>
+          <button class="btn-icon-small" (click)="cancelAddingKPI()" title="Cancel">✕</button>
+        </div>
+      } @else {
+        <div class="add-kpi-btn" (click)="startAddingKPI()">
+          <span class="add-icon">+</span>
+          <span>Add KPI</span>
+        </div>
+      }
+    </div>
+  </div>
+
+  <div class="description-section">
+    @if (isEditingField('description')) {
+      <textarea 
+        class="inline-textarea"
+        [value]="editingFieldValue()"
+        (input)="editingFieldValue.set($any($event.target).value)"
+        (blur)="saveField('description')"
+        (keydown.escape)="cancelEditingField()"
+        placeholder="Description"
+        rows="2"
+        autofocus
+      ></textarea>
+    } @else {
+      <p 
+        class="description" 
+        (click)="startEditingField('description')"
+        [class.placeholder]="!project().description"
+      >
+        {{ project().description || 'Click to add description' }}
+      </p>
+    }
+  </div>
+</div>

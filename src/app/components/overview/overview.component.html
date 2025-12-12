@@ -102,51 +102,215 @@
       </div>
     </section>
 
+    <!-- Performance KPIs Section -->
+    <section class="section">
+      <h3 class="section-title">Performance KPIs</h3>
+      <div class="performance-grid">
+        @for (item of performanceKPIValues(); track item.kpi.id) {
+          <div 
+            class="performance-card"
+            [class.dragging]="isDragging(item.kpi.id)"
+            [class.drag-over]="isDragOver(item.kpi.id)"
+            draggable="true"
+            (dragstart)="onDragStart($event, item.kpi.id)"
+            (dragover)="onDragOver($event, item.kpi.id)"
+            (dragleave)="onDragLeave($event)"
+            (drop)="onDrop($event, item.kpi.id)"
+            (dragend)="onDragEnd($event)"
+          >
+            <div class="performance-header">
+              <div class="drag-handle" title="Drag to reorder">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="9" cy="5" r="1"/>
+                  <circle cx="9" cy="12" r="1"/>
+                  <circle cx="9" cy="19" r="1"/>
+                  <circle cx="15" cy="5" r="1"/>
+                  <circle cx="15" cy="12" r="1"/>
+                  <circle cx="15" cy="19" r="1"/>
+                </svg>
+              </div>
+              <h4 class="performance-title">{{ item.kpi.name }}</h4>
+              <button class="btn-remove" (click)="removeKPIFromDashboard(item.kpi.id)" title="Remove from dashboard">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+            
+            <!-- Current vs Target Progress -->
+            <div class="current-target-display">
+              <div class="ct-values">
+                <div class="ct-current">
+                  <span class="ct-label">Current</span>
+                  <span class="ct-value">{{ formatValue(item.totalCurrent, item.kpi.unit) }}</span>
+                </div>
+                <div class="ct-arrow">→</div>
+                <div class="ct-target">
+                  <span class="ct-label">Target</span>
+                  <span class="ct-value">{{ formatValue(item.totalTarget, item.kpi.unit) }}</span>
+                </div>
+              </div>
+              <div class="ct-progress-bar">
+                <div 
+                  class="ct-progress-fill"
+                  [style.width.%]="item.totalTarget > 0 ? Math.min((item.totalCurrent / item.totalTarget) * 100, 100) : 0"
+                  [style.background]="getProgressColor(item.totalTarget > 0 ? (item.totalCurrent / item.totalTarget) * 100 : 0)"
+                ></div>
+              </div>
+            </div>
+            
+            <div class="performance-gap" [style.color]="getGapColor(item.totalValue)">
+              <span class="gap-label">Gap:</span>
+              <span class="gap-value">{{ formatGapValue(item.totalValue, item.kpi.unit) }}</span>
+            </div>
+            
+            <div class="performance-projects">
+              {{ item.projectCount }} project{{ item.projectCount !== 1 ? 's' : '' }} contributing
+            </div>
+          </div>
+        }
+        
+        <!-- Add KPI Card -->
+        <div class="add-kpi-card" (click)="openAddKPIModal()">
+          <div class="add-kpi-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 5v14M5 12h14"/>
+            </svg>
+          </div>
+          <span class="add-kpi-text">Add KPI to Dashboard</span>
+        </div>
+      </div>
+      
+      @if (dashboardKPIs().length === 0) {
+        <div class="empty-performance">
+          <p>No performance KPIs configured yet.</p>
+          <p class="empty-hint">Click "Add KPI to Dashboard" to start tracking KPIs from your projects.</p>
+        </div>
+      }
+    </section>
+
+    <!-- Maturity Section -->
+    <section class="section">
+      <h3 class="section-title">Maturity Assessments</h3>
+      <div class="maturity-grid">
+        <!-- Domain Maturity Gauge -->
+        <div class="gauge-card" (click)="openMaturityModal('domain')">
+          <div class="gauge-container">
+            <svg viewBox="0 0 100 100" class="gauge-svg">
+              <!-- Background circle (grey remainder) -->
+              <circle 
+                cx="50" cy="50" r="45" 
+                fill="none" 
+                stroke="#d4d4d8" 
+                stroke-width="10"
+                stroke-linecap="round"
+              />
+              <!-- Target arc (dashed, grey) -->
+              <circle 
+                cx="50" cy="50" r="45" 
+                fill="none" 
+                stroke="#a1a1aa"
+                stroke-width="10"
+                stroke-linecap="round"
+                [attr.stroke-dasharray]="getGaugeDashArray(domainMaturityTargetScore())"
+                stroke-dashoffset="0"
+                transform="rotate(-90 50 50)"
+                class="gauge-target"
+              />
+              <!-- Current arc -->
+              <circle 
+                cx="50" cy="50" r="45" 
+                fill="none" 
+                [attr.stroke]="getGaugeColor(domainMaturityCurrentScore())"
+                stroke-width="10"
+                stroke-linecap="round"
+                [attr.stroke-dasharray]="getGaugeDashArray(domainMaturityCurrentScore())"
+                stroke-dashoffset="0"
+                transform="rotate(-90 50 50)"
+                class="gauge-progress"
+              />
+              <!-- Center text -->
+              <text x="50" y="45" text-anchor="middle" dominant-baseline="middle" class="gauge-value">
+                {{ domainMaturityCurrentScore() }}%
+              </text>
+              <text x="50" y="60" text-anchor="middle" dominant-baseline="middle" class="gauge-target-text">
+                / {{ domainMaturityTargetScore() }}%
+              </text>
+            </svg>
+          </div>
+          <div class="gauge-info">
+            <h4 class="gauge-title">Domain Maturity</h4>
+            <p class="gauge-description">How well are your data domains defined and governed?</p>
+            <div class="gauge-legend">
+              <span class="legend-current">● Current</span>
+              <span class="legend-target">○ Target</span>
+            </div>
+            <span class="gauge-action">Click to update assessment →</span>
+          </div>
+        </div>
+
+        <!-- Data Quality Maturity Gauge -->
+        <div class="gauge-card" (click)="openMaturityModal('dataQuality')">
+          <div class="gauge-container">
+            <svg viewBox="0 0 100 100" class="gauge-svg">
+              <!-- Background circle (grey remainder) -->
+              <circle 
+                cx="50" cy="50" r="45" 
+                fill="none" 
+                stroke="#d4d4d8" 
+                stroke-width="10"
+                stroke-linecap="round"
+              />
+              <!-- Target arc (dashed, grey) -->
+              <circle 
+                cx="50" cy="50" r="45" 
+                fill="none" 
+                stroke="#a1a1aa"
+                stroke-width="10"
+                stroke-linecap="round"
+                [attr.stroke-dasharray]="getGaugeDashArray(dataQualityMaturityTargetScore())"
+                stroke-dashoffset="0"
+                transform="rotate(-90 50 50)"
+                class="gauge-target"
+              />
+              <!-- Current arc -->
+              <circle 
+                cx="50" cy="50" r="45" 
+                fill="none" 
+                [attr.stroke]="getGaugeColor(dataQualityMaturityCurrentScore())"
+                stroke-width="10"
+                stroke-linecap="round"
+                [attr.stroke-dasharray]="getGaugeDashArray(dataQualityMaturityCurrentScore())"
+                stroke-dashoffset="0"
+                transform="rotate(-90 50 50)"
+                class="gauge-progress"
+              />
+              <!-- Center text -->
+              <text x="50" y="45" text-anchor="middle" dominant-baseline="middle" class="gauge-value">
+                {{ dataQualityMaturityCurrentScore() }}%
+              </text>
+              <text x="50" y="60" text-anchor="middle" dominant-baseline="middle" class="gauge-target-text">
+                / {{ dataQualityMaturityTargetScore() }}%
+              </text>
+            </svg>
+          </div>
+          <div class="gauge-info">
+            <h4 class="gauge-title">Data Quality Maturity</h4>
+            <p class="gauge-description">How mature are your data quality practices?</p>
+            <div class="gauge-legend">
+              <span class="legend-current">● Current</span>
+              <span class="legend-target">○ Target</span>
+            </div>
+            <span class="gauge-action">Click to update assessment →</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- Coverage Metrics Section -->
     <section class="section">
       <h3 class="section-title">Coverage Metrics</h3>
       <div class="metrics-grid">
-        <!-- Personas with KPIs -->
-        <div class="metric-card">
-          <div class="metric-header">
-            <h4>Personas with KPIs</h4>
-            <span class="metric-badge" [style.background]="getProgressBgColor(personasWithKPIsPercentage())" [style.color]="getProgressColor(personasWithKPIsPercentage())">
-              {{ personasWithKPIsPercentage() }}%
-            </span>
-          </div>
-          <div class="progress-bar">
-            <div 
-              class="progress-fill" 
-              [style.width.%]="personasWithKPIsPercentage()"
-              [style.background]="getProgressColor(personasWithKPIsPercentage())"
-            ></div>
-          </div>
-          <div class="metric-detail">
-            {{ personasWithKPIsCount() }} of {{ entityCounts().personas }} personas have KPIs attached
-          </div>
-          
-          @if (domains().length > 0) {
-            <div class="breakdown-section">
-              <span class="breakdown-title">By Domain</span>
-              <div class="breakdown-list">
-                @for (item of personasWithKPIsByDomain(); track item.domainId) {
-                  <div class="breakdown-item">
-                    <span class="breakdown-label">{{ item.domainName }}</span>
-                    <div class="breakdown-bar">
-                      <div 
-                        class="breakdown-fill" 
-                        [style.width.%]="item.percentage"
-                        [style.background]="getProgressColor(item.percentage)"
-                      ></div>
-                    </div>
-                    <span class="breakdown-value">{{ item.percentage }}%</span>
-                  </div>
-                }
-              </div>
-            </div>
-          }
-        </div>
-
         <!-- KPIs Covered by Use Cases -->
         <div class="metric-card">
           <div class="metric-header">
@@ -272,4 +436,136 @@
     </section>
   </div>
 </div>
+
+<!-- Add KPI to Dashboard Modal -->
+@if (showAddKPIModal()) {
+  <div class="modal-overlay" (click)="closeAddKPIModal()">
+    <div class="modal-content add-kpi-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Add KPI to Dashboard</h3>
+        <button class="btn-close" (click)="closeAddKPIModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="search-input-container">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/>
+            <path d="m21 21-4.3-4.3"/>
+          </svg>
+          <input 
+            type="text" 
+            class="search-input"
+            placeholder="Search KPIs..."
+            [ngModel]="kpiSearchFilter()"
+            (ngModelChange)="kpiSearchFilter.set($event)"
+          />
+        </div>
+        
+        <div class="kpi-list">
+          @for (kpi of availableKPIs(); track kpi.id) {
+            <div class="kpi-list-item" (click)="addKPIToDashboard(kpi)">
+              <div class="kpi-item-info">
+                <span class="kpi-item-name">{{ kpi.name }}</span>
+                @if (kpi.description) {
+                  <span class="kpi-item-desc">{{ kpi.description }}</span>
+                }
+              </div>
+              <span class="kpi-item-unit">{{ kpi.unit || '-' }}</span>
+            </div>
+          } @empty {
+            <div class="empty-kpi-list">
+              @if (kpis().length === 0) {
+                <p>No KPIs exist yet.</p>
+                <p class="empty-hint">Create KPIs in the KPI section first.</p>
+              } @else if (availableKPIs().length === 0 && kpiSearchFilter()) {
+                <p>No KPIs match your search.</p>
+              } @else {
+                <p>All KPIs are already on the dashboard.</p>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Maturity Assessment Modal -->
+@if (showMaturityModal()) {
+  <div class="modal-overlay" (click)="closeMaturityModal()">
+    <div class="modal-content maturity-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>{{ getMaturityModalTitle() }}</h3>
+        <button class="btn-close" (click)="closeMaturityModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-intro">
+          Rate each area on a scale from "Not Started" to "Optimized". Set both your current state and target goal.
+        </p>
+        
+        <div class="questions-list">
+          @for (question of getMaturityQuestions(); track question.id) {
+            <div class="question-item">
+              <div class="question-header">
+                <span class="question-text">{{ question.text }}</span>
+              </div>
+              @if (question.description) {
+                <p class="question-description">{{ question.description }}</p>
+              }
+              
+              <!-- Current Level -->
+              <div class="level-section">
+                <div class="level-section-header">
+                  <span class="level-section-label">Current:</span>
+                  <span class="level-section-value" [style.color]="getLevelColor(getQuestionCurrentScore(question.id))">
+                    {{ getLevelLabel(getQuestionCurrentScore(question.id)) }}
+                  </span>
+                </div>
+                <div class="level-buttons">
+                  @for (level of maturityLevels; track level.value) {
+                    <button 
+                      class="level-btn"
+                      [class.active]="getQuestionCurrentScore(question.id) === level.value"
+                      [style.--level-color]="level.color"
+                      (click)="setQuestionCurrentScore(question.id, level.value)"
+                      [title]="level.label"
+                    >
+                      <span class="level-value">{{ level.value }}</span>
+                    </button>
+                  }
+                </div>
+              </div>
+              
+              <!-- Target Level -->
+              <div class="level-section target-section">
+                <div class="level-section-header">
+                  <span class="level-section-label">Target:</span>
+                  <span class="level-section-value" [style.color]="getLevelColor(getQuestionTargetScore(question.id))">
+                    {{ getLevelLabel(getQuestionTargetScore(question.id)) }}
+                  </span>
+                </div>
+                <div class="level-buttons">
+                  @for (level of maturityLevels; track level.value) {
+                    <button 
+                      class="level-btn target-btn"
+                      [class.active]="getQuestionTargetScore(question.id) === level.value"
+                      [style.--level-color]="level.color"
+                      (click)="setQuestionTargetScore(question.id, level.value)"
+                      [title]="level.label"
+                    >
+                      <span class="level-value">{{ level.value }}</span>
+                    </button>
+                  }
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeMaturityModal()">Cancel</button>
+        <button class="btn btn-primary" (click)="saveMaturityAssessment()">Save Assessment</button>
+      </div>
+    </div>
+  </div>
+}
 

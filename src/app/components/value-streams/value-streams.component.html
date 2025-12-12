@@ -1,0 +1,265 @@
+<div class="value-streams-page">
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <div class="toolbar-left">
+      <h2>Value Streams</h2>
+      <span class="stream-count">{{ allStreams().length }} streams</span>
+    </div>
+    <div class="toolbar-right">
+      @if (selectedEdgeId()) {
+        <button class="btn btn-danger btn-sm" (click)="deleteSelectedEdge()">
+          Delete Connection
+        </button>
+      }
+      <button class="btn btn-secondary btn-sm" (click)="fitView()">
+        Fit View
+      </button>
+      <button class="btn btn-primary btn-sm" (click)="openStreamModal()">
+        + Add Stream
+      </button>
+    </div>
+  </div>
+  
+  <!-- Help bar -->
+  <div class="help-bar">
+    <span><strong>Drag ●</strong> to connect stages • <strong>Click edge + Backspace</strong> to delete • <strong>Double-click</strong> to edit • <strong>Right-click</strong> to delete • <strong>Scroll</strong> to zoom</span>
+  </div>
+
+  <!-- Main Graph Canvas -->
+  <div class="graph-canvas">
+    <vflow 
+      [nodes]="nodes()" 
+      [edges]="edges()"
+      [connection]="connectionSettings"
+      view="auto"
+      [minZoom]="0.2"
+      [maxZoom]="2"
+      background="#f8fafc"
+      [entitiesSelectable]="true"
+      [elevateNodesOnSelect]="true"
+      [elevateEdgesOnSelect]="true"
+      (connect)="onConnect($event)"
+      (onEdgesChange.select)="onEdgeSelect($event)"
+    >
+      <ng-template nodeHtml let-ctx>
+        <!-- Stream (parent) node -->
+        @if (ctx.node.data.type === 'stream') {
+          <div 
+            class="stream-node"
+            [style.width.px]="getStreamSize(ctx.node.data.stream).width"
+            [style.height.px]="getStreamSize(ctx.node.data.stream).height"
+            [style.border-color]="getTypeBorderColor(ctx.node.data.stream.type)"
+            (dblclick)="onNodeDoubleClick(ctx.node.id, ctx.node.data)"
+            (contextmenu)="onNodeRightClick($event, ctx.node.id, ctx.node.data)"
+          >
+            <div class="stream-header">
+              <span class="stream-type-badge" [style.background-color]="getTypeBorderColor(ctx.node.data.stream.type)">
+                {{ getTypeLabel(ctx.node.data.stream.type) }}
+              </span>
+              <span class="stream-name">{{ ctx.node.data.stream.name }}</span>
+            </div>
+            @if (ctx.node.data.stream.description) {
+              <p class="stream-desc">{{ ctx.node.data.stream.description }}</p>
+            }
+            <!-- Resize handle -->
+            <div 
+              class="resize-handle" 
+              (mousedown)="onResizeStart($event, ctx.node.data.stream)"
+            >
+              <svg viewBox="0 0 10 10" fill="currentColor">
+                <circle cx="2" cy="8" r="1"/>
+                <circle cx="5" cy="8" r="1"/>
+                <circle cx="8" cy="8" r="1"/>
+                <circle cx="5" cy="5" r="1"/>
+                <circle cx="8" cy="5" r="1"/>
+                <circle cx="8" cy="2" r="1"/>
+              </svg>
+            </div>
+          </div>
+        }
+        
+        <!-- Stage node -->
+        @if (ctx.node.data.type === 'stage') {
+          <div 
+            class="stage-node"
+            (dblclick)="onNodeDoubleClick(ctx.node.id, ctx.node.data)"
+            (contextmenu)="onNodeRightClick($event, ctx.node.id, ctx.node.data)"
+          >
+            <!-- Target handle (left) -->
+            <handle [type]="'target'" [position]="'left'" [id]="'target'" />
+            
+            <div class="stage-content">
+              <span class="stage-name">{{ ctx.node.data.stage.name }}</span>
+              @if (ctx.node.data.stage.description) {
+                <span class="stage-desc">{{ ctx.node.data.stage.description }}</span>
+              }
+              @if (getStageBadges(ctx.node.data.stage)) {
+                <span class="stage-badges">{{ getStageBadges(ctx.node.data.stage) }}</span>
+              }
+            </div>
+            
+            <!-- Source handle (right) -->
+            <handle [type]="'source'" [position]="'right'" [id]="'source'" />
+          </div>
+        }
+        
+        <!-- Add Stream button node -->
+        @if (ctx.node.data.type === 'addStream') {
+          <div 
+            class="add-stream-node"
+            (click)="onNodeClick(ctx.node.id, ctx.node.data)"
+          >
+            <span class="add-icon">+</span>
+            <span class="add-label">Add Value Stream</span>
+          </div>
+        }
+        
+        <!-- Add Stage button node -->
+        @if (ctx.node.data.type === 'addStage') {
+          <div 
+            class="add-stage-node"
+            (click)="onNodeClick(ctx.node.id, ctx.node.data)"
+          >
+            <span class="add-icon">+</span>
+          </div>
+        }
+      </ng-template>
+    </vflow>
+  </div>
+</div>
+
+<!-- Stream Modal -->
+@if (showStreamModal()) {
+  <div class="modal-overlay" (click)="closeStreamModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>{{ editingStreamId() ? 'Edit Value Stream' : 'New Value Stream' }}</h3>
+        <button class="btn-close" (click)="closeStreamModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Name *</label>
+          <input type="text" [ngModel]="newStream().name" (ngModelChange)="updateStreamName($event)" placeholder="e.g., Customer Onboarding" />
+        </div>
+        <div class="form-group">
+          <label>Type</label>
+          <select [ngModel]="newStream().type" (ngModelChange)="updateStreamType($event)">
+            @for (type of valueStreamTypes; track type.value) {
+              <option [value]="type.value">{{ type.label }} - {{ type.description }}</option>
+            }
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <textarea [ngModel]="newStream().description" (ngModelChange)="updateStreamDescription($event)" placeholder="Describe the value stream..." rows="2"></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Trigger Event</label>
+            <input type="text" [ngModel]="newStream().triggerEvent" (ngModelChange)="updateStreamTrigger($event)" placeholder="e.g., Customer request" />
+          </div>
+          <div class="form-group">
+            <label>End State</label>
+            <input type="text" [ngModel]="newStream().endState" (ngModelChange)="updateStreamEndState($event)" placeholder="e.g., Customer onboarded" />
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeStreamModal()">Cancel</button>
+        <button class="btn btn-primary" (click)="saveStream()" [disabled]="!newStream().name.trim()">
+          {{ editingStreamId() ? 'Save Changes' : 'Create Stream' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Stage Modal -->
+@if (showStageModal()) {
+  <div class="modal-overlay" (click)="closeStageModal()">
+    <div class="modal-content stage-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>{{ editingStageId() ? 'Edit Stage' : 'New Stage' }}</h3>
+        <button class="btn-close" (click)="closeStageModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Stage Name *</label>
+          <input type="text" [ngModel]="newStage().name" (ngModelChange)="updateStageName($event)" placeholder="e.g., Verify Identity" />
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <textarea [ngModel]="newStage().description" (ngModelChange)="updateStageDescription($event)" placeholder="What happens in this stage?" rows="2"></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Inputs</label>
+            <input type="text" [ngModel]="newStage().inputs" (ngModelChange)="updateStageInputs($event)" placeholder="What enters?" />
+          </div>
+          <div class="form-group">
+            <label>Outputs</label>
+            <input type="text" [ngModel]="newStage().outputs" (ngModelChange)="updateStageOutputs($event)" placeholder="What exits?" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Value Add</label>
+            <input type="text" [ngModel]="newStage().valueAdd" (ngModelChange)="updateStageValueAdd($event)" placeholder="Value created" />
+          </div>
+          <div class="form-group">
+            <label>Cycle Time</label>
+            <input type="text" [ngModel]="newStage().cycleTime" (ngModelChange)="updateStageCycleTime($event)" placeholder="e.g., 2 days" />
+          </div>
+        </div>
+        
+        <div class="form-section">
+          <h4>Stakeholders (Personas)</h4>
+          <div class="chips-container">
+            @for (persona of personas(); track persona.id) {
+              <button class="chip" [class.selected]="newStage().stakeholderIds.includes(persona.id)" (click)="toggleStakeholder(persona.id)">
+                {{ persona.name }}
+              </button>
+            }
+            @if (personas().length === 0) {
+              <span class="no-items">No personas available</span>
+            }
+          </div>
+        </div>
+        
+        <div class="form-section">
+          <h4>Capabilities (Use Cases)</h4>
+          <div class="chips-container">
+            @for (useCase of useCases(); track useCase.id) {
+              <button class="chip" [class.selected]="newStage().capabilityIds.includes(useCase.id)" (click)="toggleCapability(useCase.id)">
+                {{ useCase.action }}
+              </button>
+            }
+            @if (useCases().length === 0) {
+              <span class="no-items">No use cases available</span>
+            }
+          </div>
+        </div>
+        
+        <div class="form-section">
+          <h4>Enabling Resources (Tools)</h4>
+          <div class="chips-container">
+            @for (tool of tools(); track tool.id) {
+              <button class="chip" [class.selected]="newStage().enablingResourceIds.includes(tool.id)" (click)="toggleResource(tool.id)">
+                {{ tool.name }}
+              </button>
+            }
+            @if (tools().length === 0) {
+              <span class="no-items">No tools available</span>
+            }
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeStageModal()">Cancel</button>
+        <button class="btn btn-primary" (click)="saveStage()" [disabled]="!newStage().name.trim()">
+          {{ editingStageId() ? 'Save Changes' : 'Add Stage' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

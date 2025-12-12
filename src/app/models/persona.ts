@@ -8,7 +8,6 @@ export interface Persona {
   name: string;
   description: string;
   personaUseCaseMappings: PersonaUseCaseMapping[]; // Use cases and tools used by this persona
-  kpiIds?: string[]; // KPIs associated with this persona
   createdAt: Date;
   updatedAt: Date;
 }

@@ -8,6 +8,8 @@ import { SearchComponent } from './components/search/search.component';
 import { DomainsComponent } from './components/domains/domains.component';
 import { KPIsComponent } from './components/kpis/kpis.component';
 import { OverviewComponent } from './components/overview/overview.component';
+import { ProjectsComponent } from './components/projects/projects.component';
+import { ValueStreamsComponent } from './components/value-streams/value-streams.component';
 
 export const routes: Routes = [
   {
@@ -44,12 +46,20 @@ export const routes: Routes = [
         component: PersonasComponent
       },
       {
+        path: 'value-streams',
+        component: ValueStreamsComponent
+      },
+      {
         path: 'domains',
         component: DomainsComponent
       },
       {
         path: 'kpis',
         component: KPIsComponent
+      },
+      {
+        path: 'projects',
+        component: ProjectsComponent
       }
     ]
   }

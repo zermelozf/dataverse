@@ -25,7 +25,6 @@ export class UseCasesComponent {
     const all = this.allUseCases();
     if (!query) return all;
     return all.filter(uc => 
-      uc.name?.toLowerCase().includes(query) ||
       uc.action?.toLowerCase().includes(query) ||
       uc.goal?.toLowerCase().includes(query)
     );
@@ -34,7 +33,7 @@ export class UseCasesComponent {
   personas = computed(() => this.personaService.getPersonas()());
   
   showAddModal = signal(false);
-  addModalErrors = signal<{ name?: string; persona?: string; action?: string; goal?: string }>({});
+  addModalErrors = signal<{ action?: string; goal?: string }>({});
   
   editingField = signal<{ useCaseId: string; field: string } | null>(null);
   editingFieldValue = signal<string>('');
@@ -54,11 +53,12 @@ export class UseCasesComponent {
   toolSearchFilterModal = signal<string>('');
   
   newUseCase = signal({
-    name: '',
     persona: '',
     action: '',
     goal: '',
-    useCaseToolMappings: [] as { useCaseId: string; toolId: string }[]
+    useCaseToolMappings: [] as { useCaseId: string; toolId: string }[],
+    currentVersion: 'v0',
+    targetVersion: 'v0'
   });
 
   constructor(
@@ -68,7 +68,7 @@ export class UseCasesComponent {
   ) {}
 
   // Individual field editing with auto-save
-  startEditingField(useCase: UseCase, field: 'name' | 'action' | 'goal') {
+  startEditingField(useCase: UseCase, field: 'action' | 'goal') {
     this.editingField.set({ useCaseId: useCase.id, field });
     this.editingFieldValue.set(useCase[field] || '');
   }
@@ -344,7 +344,7 @@ export class UseCasesComponent {
 
   // Modal for adding new use case
   openAddModal() {
-    this.newUseCase.set({ name: '', persona: '', action: '', goal: '', useCaseToolMappings: [] });
+    this.newUseCase.set({ persona: '', action: '', goal: '', useCaseToolMappings: [], currentVersion: 'v0', targetVersion: 'v0' });
     this.editingPersonaInModal.set(false);
     this.personaSearchFilterModal.set('');
     this.addingToolInModal.set(false);
@@ -433,8 +433,15 @@ export class UseCasesComponent {
   }
 
   addUseCase() {
-    if (this.newUseCase().name.trim() && this.newUseCase().action.trim() && this.newUseCase().goal.trim()) {
-      this.useCaseService.addUseCase(this.newUseCase());
+    if (this.newUseCase().action.trim() && this.newUseCase().goal.trim()) {
+      this.useCaseService.addUseCase({
+        persona: this.newUseCase().persona,
+        action: this.newUseCase().action,
+        goal: this.newUseCase().goal,
+        useCaseToolMappings: this.newUseCase().useCaseToolMappings,
+        currentVersion: this.newUseCase().currentVersion?.trim() || 'v0',
+        targetVersion: this.newUseCase().targetVersion?.trim() || 'v0'
+      });
       this.closeAddModal();
     }
   }

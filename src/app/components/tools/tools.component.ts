@@ -95,7 +95,7 @@ export class ToolsComponent {
   startEditingUseCase(toolId: string, useCaseId: string) {
     this.editingUseCase.set({ toolId, useCaseId });
     const useCase = this.useCases().find(uc => uc.id === useCaseId);
-    this.useCaseSearchFilter.set(useCase?.name || useCase?.action || '');
+    this.useCaseSearchFilter.set(useCase?.action || '');
   }
 
   cancelEditingUseCase() {
@@ -126,9 +126,8 @@ export class ToolsComponent {
     const filter = this.useCaseSearchFilter().toLowerCase().trim();
     if (!filter) return this.useCases();
     return this.useCases().filter(useCase => {
-      const name = useCase.name?.toLowerCase() || '';
       const action = useCase.action?.toLowerCase() || '';
-      return name.includes(filter) || action.includes(filter);
+      return action.includes(filter);
     });
   }
 

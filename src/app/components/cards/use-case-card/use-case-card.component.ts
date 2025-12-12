@@ -20,8 +20,8 @@ export class UseCaseCardComponent {
   personas = computed(() => this.personaService.getPersonas()());
   tools = computed(() => this.toolService.getTools()());
 
-  // Inline editing for name, action, goal
-  editingField = signal<{ field: 'name' | 'action' | 'goal' } | null>(null);
+  // Inline editing for action, goal, version
+  editingField = signal<{ field: 'action' | 'goal' | 'currentVersion' | 'targetVersion' } | null>(null);
   editingFieldValue = signal<string>('');
 
   // Persona editing
@@ -40,7 +40,7 @@ export class UseCaseCardComponent {
   ) {}
 
   // Field editing methods
-  startEditingField(field: 'name' | 'action' | 'goal') {
+  startEditingField(field: 'action' | 'goal' | 'currentVersion' | 'targetVersion') {
     this.editingField.set({ field });
     this.editingFieldValue.set(this.useCase()[field] || '');
   }
@@ -50,22 +50,18 @@ export class UseCaseCardComponent {
     this.editingFieldValue.set('');
   }
 
-  saveField(field: 'name' | 'action' | 'goal') {
+  saveField(field: 'action' | 'goal' | 'currentVersion' | 'targetVersion') {
     const value = this.editingFieldValue().trim();
-    if (!value) {
+    // Version fields can be empty, but action and goal are required
+    if (!value && (field === 'action' || field === 'goal')) {
       this.cancelEditingField();
       return;
     }
-    // When saving action, also sync the name field to keep them the same
-    if (field === 'action') {
-      this.useCaseService.updateUseCase(this.useCase().id, { action: value, name: value });
-    } else {
-      this.useCaseService.updateUseCase(this.useCase().id, { [field]: value });
-    }
+    this.useCaseService.updateUseCase(this.useCase().id, { [field]: value || undefined });
     this.cancelEditingField();
   }
 
-  isEditingField(field: 'name' | 'action' | 'goal'): boolean {
+  isEditingField(field: 'action' | 'goal' | 'currentVersion' | 'targetVersion'): boolean {
     const editing = this.editingField();
     return editing?.field === field;
   }
@@ -269,14 +265,15 @@ export class UseCaseCardComponent {
   duplicateUseCase() {
     const currentUseCase = this.useCase();
     this.useCaseService.addUseCase({
-      name: `${currentUseCase.name} (Copy)`,
       persona: currentUseCase.persona,
-      action: currentUseCase.action,
+      action: `${currentUseCase.action} (Copy)`,
       goal: currentUseCase.goal,
       useCaseToolMappings: currentUseCase.useCaseToolMappings.map(m => ({
         useCaseId: '', // Will be set by the service
         toolId: m.toolId
-      }))
+      })),
+      currentVersion: currentUseCase.currentVersion || 'v0',
+      targetVersion: currentUseCase.targetVersion || 'v0'
     });
   }
 

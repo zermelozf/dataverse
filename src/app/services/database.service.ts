@@ -6,6 +6,10 @@ import { UseCase } from '../models/use-case';
 import { Persona } from '../models/persona';
 import { Domain } from '../models/domain';
 import { KPI } from '../models/kpi';
+import { Project } from '../models/project';
+import { MaturityAssessment } from '../models/maturity';
+import { DashboardConfig } from '../models/dashboard-config';
+import { ValueStream } from '../models/value-stream';
 
 class DataverseDatabase extends Dexie {
   dataModels!: Table<DataModel, string>;
@@ -15,6 +19,10 @@ class DataverseDatabase extends Dexie {
   personas!: Table<Persona, string>;
   domains!: Table<Domain, string>;
   kpis!: Table<KPI, string>;
+  projects!: Table<Project, string>;
+  maturityAssessments!: Table<MaturityAssessment, string>;
+  dashboardConfig!: Table<DashboardConfig, string>;
+  valueStreams!: Table<ValueStream, string>;
 
   constructor() {
     super('DataverseDB');
@@ -42,6 +50,52 @@ class DataverseDatabase extends Dexie {
       domains: 'id, name',
       kpis: 'id, name, createdAt, updatedAt'
     });
+    this.version(4).stores({
+      dataModels: 'id, name, domainId, version, createdAt, updatedAt',
+      implementations: 'id, dataModelId, toolId, createdAt, updatedAt',
+      tools: 'id, name, createdAt, updatedAt',
+      useCases: 'id, name, createdAt, updatedAt',
+      personas: 'id, name, createdAt, updatedAt',
+      domains: 'id, name',
+      kpis: 'id, name, createdAt, updatedAt',
+      projects: 'id, name, createdAt, updatedAt'
+    });
+    this.version(5).stores({
+      dataModels: 'id, name, domainId, version, createdAt, updatedAt',
+      implementations: 'id, dataModelId, toolId, createdAt, updatedAt',
+      tools: 'id, name, createdAt, updatedAt',
+      useCases: 'id, name, createdAt, updatedAt',
+      personas: 'id, name, createdAt, updatedAt',
+      domains: 'id, name',
+      kpis: 'id, name, createdAt, updatedAt',
+      projects: 'id, name, createdAt, updatedAt',
+      maturityAssessments: 'id, type, updatedAt'
+    });
+    this.version(6).stores({
+      dataModels: 'id, name, domainId, version, createdAt, updatedAt',
+      implementations: 'id, dataModelId, toolId, createdAt, updatedAt',
+      tools: 'id, name, createdAt, updatedAt',
+      useCases: 'id, name, createdAt, updatedAt',
+      personas: 'id, name, createdAt, updatedAt',
+      domains: 'id, name',
+      kpis: 'id, name, createdAt, updatedAt',
+      projects: 'id, name, createdAt, updatedAt',
+      maturityAssessments: 'id, type, updatedAt',
+      dashboardConfig: 'id'
+    });
+    this.version(7).stores({
+      dataModels: 'id, name, domainId, version, createdAt, updatedAt',
+      implementations: 'id, dataModelId, toolId, createdAt, updatedAt',
+      tools: 'id, name, createdAt, updatedAt',
+      useCases: 'id, name, createdAt, updatedAt',
+      personas: 'id, name, createdAt, updatedAt',
+      domains: 'id, name',
+      kpis: 'id, name, createdAt, updatedAt',
+      projects: 'id, name, createdAt, updatedAt',
+      maturityAssessments: 'id, type, updatedAt',
+      dashboardConfig: 'id',
+      valueStreams: 'id, name, type, createdAt, updatedAt'
+    });
   }
 }
 
@@ -55,6 +109,7 @@ export interface DataverseExport {
   personas: Persona[];
   domains?: Domain[];
   kpis?: KPI[];
+  projects?: Project[];
 }
 
 @Injectable({
@@ -91,15 +146,32 @@ export class DatabaseService {
     return this.db.kpis;
   }
 
+  get projects() {
+    return this.db.projects;
+  }
+
+  get maturityAssessments() {
+    return this.db.maturityAssessments;
+  }
+
+  get dashboardConfig() {
+    return this.db.dashboardConfig;
+  }
+
+  get valueStreams() {
+    return this.db.valueStreams;
+  }
+
   async exportData(): Promise<DataverseExport> {
-    const [dataModels, implementations, tools, useCases, personas, domains, kpis] = await Promise.all([
+    const [dataModels, implementations, tools, useCases, personas, domains, kpis, projects] = await Promise.all([
       this.db.dataModels.toArray(),
       this.db.implementations.toArray(),
       this.db.tools.toArray(),
       this.db.useCases.toArray(),
       this.db.personas.toArray(),
       this.db.domains.toArray(),
-      this.db.kpis.toArray()
+      this.db.kpis.toArray(),
+      this.db.projects.toArray()
     ]);
 
     return {
@@ -111,7 +183,8 @@ export class DatabaseService {
       useCases,
       personas,
       domains,
-      kpis
+      kpis,
+      projects
     };
   }
 
@@ -149,7 +222,8 @@ export class DatabaseService {
       this.db.useCases.clear(),
       this.db.personas.clear(),
       this.db.domains.clear(),
-      this.db.kpis.clear()
+      this.db.kpis.clear(),
+      this.db.projects.clear()
     ]);
 
     // Import new data using bulkPut (safer than bulkAdd, handles duplicates)
@@ -173,6 +247,9 @@ export class DatabaseService {
     }
     if (data.kpis && data.kpis.length > 0) {
       await this.db.kpis.bulkPut(data.kpis);
+    }
+    if (data.projects && data.projects.length > 0) {
+      await this.db.projects.bulkPut(data.projects);
     }
   }
 

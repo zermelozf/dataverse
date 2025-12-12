@@ -224,5 +224,58 @@
       }
     </div>
   </div>
+
+  <!-- Version Section -->
+  <div class="version-section">
+    <span class="section-label">Version</span>
+    <div class="version-grid">
+      <div class="version-item">
+        <span class="version-label">Current</span>
+        @if (isEditingField('currentVersion')) {
+          <input 
+            type="text" 
+            class="inline-input small"
+            [value]="editingFieldValue()"
+            (input)="editingFieldValue.set($any($event.target).value)"
+            (blur)="saveField('currentVersion')"
+            (keydown.enter)="saveField('currentVersion'); $event.target.blur()"
+            (keydown.escape)="cancelEditingField()"
+            placeholder="e.g., 1.0.0"
+            autofocus
+          />
+        } @else {
+          <span 
+            (click)="startEditingField('currentVersion')" 
+            class="version-value editable-text"
+          >
+            {{ useCase().currentVersion || 'v0' }}
+          </span>
+        }
+      </div>
+      <div class="version-item">
+        <span class="version-label">Target</span>
+        @if (isEditingField('targetVersion')) {
+          <input 
+            type="text" 
+            class="inline-input small"
+            [value]="editingFieldValue()"
+            (input)="editingFieldValue.set($any($event.target).value)"
+            (blur)="saveField('targetVersion')"
+            (keydown.enter)="saveField('targetVersion'); $event.target.blur()"
+            (keydown.escape)="cancelEditingField()"
+            placeholder="e.g., 2.0.0"
+            autofocus
+          />
+        } @else {
+          <span 
+            (click)="startEditingField('targetVersion')" 
+            class="version-value editable-text"
+          >
+            {{ useCase().targetVersion || 'v0' }}
+          </span>
+        }
+      </div>
+    </div>
+  </div>
 </div>
 

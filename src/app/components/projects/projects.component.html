@@ -1,0 +1,216 @@
+<div class="projects-container">
+  <div class="header">
+    <h2>Projects</h2>
+    <div class="header-controls">
+      <app-search-input
+        placeholder="Search projects..."
+        [value]="searchQuery()"
+        (valueChange)="searchQuery.set($event)"
+      />
+      <button class="btn btn-primary" (click)="openAddModal()">+ Add Project</button>
+    </div>
+  </div>
+
+  <div class="projects-grid">
+    @for (project of projects(); track project.id) {
+      <app-project-card [project]="project" />
+    } @empty {
+      <div class="empty-state-large">
+        <p>No projects yet. Create your first one!</p>
+      </div>
+    }
+  </div>
+</div>
+
+<!-- Add Project Modal -->
+@if (showAddModal()) {
+  <div class="modal-overlay" (click)="closeAddModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Add Project</h3>
+        <button class="btn-close" (click)="closeAddModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Name <span class="required">*</span></label>
+          <input 
+            type="text" 
+            [(ngModel)]="newProject().name" 
+            placeholder="Enter project name"
+            [class.error]="addModalErrors().name"
+          />
+          @if (addModalErrors().name) {
+            <span class="error-message">{{ addModalErrors().name }}</span>
+          }
+        </div>
+
+        <!-- Use Cases Selection -->
+        <div class="form-group">
+          <label>Use Cases</label>
+          <div class="items-list">
+            @for (useCaseId of getSelectedUseCases(); track useCaseId) {
+              <div class="item">
+                <span class="item-name">{{ getUseCaseName(useCaseId) }}</span>
+                <button class="btn-icon" (click)="removeUseCaseFromProject(useCaseId)" title="Remove">🗑️</button>
+              </div>
+            }
+            
+            @if (addingUseCaseInModal()) {
+              <div class="item adding">
+                <div class="selector-container">
+                  <input 
+                    type="text" 
+                    class="search-input"
+                    [ngModel]="useCaseSearchFilterModal()"
+                    (ngModelChange)="useCaseSearchFilterModal.set($event)"
+                    (blur)="handleUseCaseModalInputBlur()"
+                    placeholder="Search or create use case..."
+                    autofocus
+                  />
+                  <div class="dropdown" (mousedown)="$event.preventDefault()">
+                    @if (useCaseSearchFilterModal().trim()) {
+                      @for (useCase of getFilteredUseCasesForModal(); track useCase.id) {
+                        <div class="dropdown-option" (mousedown)="addUseCaseToProjectInModal(useCase.id)">
+                          {{ useCase.action }}
+                        </div>
+                      }
+                      @if (canCreateUseCaseInModal()) {
+                        <div class="dropdown-option create-option" (mousedown)="createAndAddUseCaseInModal()">
+                          + Create "{{ useCaseSearchFilterModal() }}"
+                        </div>
+                      }
+                      @if (getFilteredUseCasesForModal().length === 0 && !canCreateUseCaseInModal()) {
+                        <div class="dropdown-option no-results">No matching use cases</div>
+                      }
+                    } @else {
+                      @for (useCase of getFilteredUseCasesForModal(); track useCase.id) {
+                        <div class="dropdown-option" (mousedown)="addUseCaseToProjectInModal(useCase.id)">
+                          {{ useCase.action }}
+                        </div>
+                      }
+                      @if (getFilteredUseCasesForModal().length === 0) {
+                        <div class="dropdown-option no-results">No use cases available. Type to create one.</div>
+                      }
+                    }
+                  </div>
+                </div>
+              </div>
+            } @else {
+              <div class="add-item" (click)="startAddingUseCaseInModal()">
+                <span class="add-icon">+</span>
+                <span class="add-text">Add Use Case</span>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- KPIs Selection (Required) with Current/Target Values -->
+        <div class="form-group">
+          <label>KPIs <span class="required">*</span></label>
+          <div class="kpi-list" [class.error]="addModalErrors().kpi">
+            @for (mapping of getSelectedKPIMappings(); track mapping.kpiId) {
+              <div class="kpi-item">
+                <div class="kpi-item-header">
+                  <span class="kpi-name">{{ getKPIName(mapping.kpiId) }}</span>
+                  @if (getKPIUnit(mapping.kpiId)) {
+                    <span class="kpi-unit">({{ getKPIUnit(mapping.kpiId) }})</span>
+                  }
+                  <button class="btn-icon" (click)="removeKPIFromProject(mapping.kpiId)" title="Remove">🗑️</button>
+                </div>
+                <div class="kpi-values-row">
+                  <div class="kpi-value-field">
+                    <label>Current</label>
+                    <input 
+                      type="text" 
+                      [ngModel]="mapping.currentValue"
+                      (ngModelChange)="updateKPIValue(mapping.kpiId, 'currentValue', $event)"
+                      placeholder="Current value"
+                    />
+                  </div>
+                  <div class="kpi-value-field">
+                    <label>Target</label>
+                    <input 
+                      type="text" 
+                      [ngModel]="mapping.targetValue"
+                      (ngModelChange)="updateKPIValue(mapping.kpiId, 'targetValue', $event)"
+                      placeholder="Target value"
+                    />
+                  </div>
+                </div>
+              </div>
+            }
+            
+            @if (addingKPIInModal()) {
+              <div class="kpi-item adding">
+                <div class="selector-container">
+                  <input 
+                    type="text" 
+                    class="search-input"
+                    [ngModel]="kpiSearchFilterModal()"
+                    (ngModelChange)="kpiSearchFilterModal.set($event)"
+                    (blur)="handleKPIModalInputBlur()"
+                    placeholder="Search or create KPI..."
+                    autofocus
+                  />
+                  <div class="dropdown" (mousedown)="$event.preventDefault()">
+                    @if (kpiSearchFilterModal().trim()) {
+                      @for (kpi of getFilteredKPIsForModal(); track kpi.id) {
+                        <div class="dropdown-option" (mousedown)="addKPIToProjectInModal(kpi.id)">
+                          {{ kpi.name }}
+                          @if (kpi.unit) {
+                            <span class="option-hint">({{ kpi.unit }})</span>
+                          }
+                        </div>
+                      }
+                      @if (canCreateKPIInModal()) {
+                        <div class="dropdown-option create-option" (mousedown)="createAndAddKPIInModal()">
+                          + Create "{{ kpiSearchFilterModal() }}"
+                        </div>
+                      }
+                      @if (getFilteredKPIsForModal().length === 0 && !canCreateKPIInModal()) {
+                        <div class="dropdown-option no-results">No matching KPIs</div>
+                      }
+                    } @else {
+                      @for (kpi of getFilteredKPIsForModal(); track kpi.id) {
+                        <div class="dropdown-option" (mousedown)="addKPIToProjectInModal(kpi.id)">
+                          {{ kpi.name }}
+                          @if (kpi.unit) {
+                            <span class="option-hint">({{ kpi.unit }})</span>
+                          }
+                        </div>
+                      }
+                      @if (getFilteredKPIsForModal().length === 0) {
+                        <div class="dropdown-option no-results">No KPIs available. Type to create one.</div>
+                      }
+                    }
+                  </div>
+                </div>
+              </div>
+            } @else {
+              <div class="add-item" (click)="startAddingKPIInModal()">
+                <span class="add-icon">+</span>
+                <span class="add-text">Add KPI</span>
+              </div>
+            }
+          </div>
+          @if (addModalErrors().kpi) {
+            <span class="error-message">{{ addModalErrors().kpi }}</span>
+          }
+        </div>
+
+        <div class="form-group">
+          <label>Description</label>
+          <textarea 
+            [(ngModel)]="newProject().description" 
+            placeholder="Enter description (optional)" 
+            rows="3"
+          ></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeAddModal()">Cancel</button>
+        <button class="btn btn-primary" (click)="addProject()">Add Project</button>
+      </div>
+    </div>
+  </div>
+}

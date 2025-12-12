@@ -5,12 +5,12 @@ export interface UseCaseToolMapping {
 
 export interface UseCase {
   id: string;
-  name: string; // Use case name/title
   persona: string; // Persona ID
-  action: string; // The action the persona wants to perform
+  action: string; // The action the persona wants to perform (also serves as title)
   goal: string; // The goal/benefit of the action
   useCaseToolMappings: UseCaseToolMapping[]; // Tools that can realize this use case
+  currentVersion?: string; // Current version
+  targetVersion?: string; // Target version
   createdAt: Date;
   updatedAt: Date;
 }
-
